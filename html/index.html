@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商多智能体智能客服平台 - 用户ID输入</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>电商多智能体智能客服平台</h1>
+        <p>请输入您的用户ID开始对话</p>
+        
+        <div class="input-group">
+            <label for="user-id">用户ID</label>
+            <input type="text" id="user-id" placeholder="例如: 5588" maxlength="20">
+            <div class="error" id="error-message">用户ID不能为空</div>
+        </div>
+        
+        <button class="btn" onclick="enterChat()">进入智能客服</button>
+    </div>
+
+    <script>
+        function enterChat() {
+            const userId = document.getElementById('user-id').value.trim();
+            const errorMessage = document.getElementById('error-message');
+            
+            if (!userId) {
+                errorMessage.textContent = '用户ID不能为空';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            // 验证用户ID格式（只允许字母、数字和下划线）
+            if (!/^[a-zA-Z0-9_]+$/.test(userId)) {
+                errorMessage.textContent = '用户ID只能包含字母、数字和下划线';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            errorMessage.classList.remove('show');
+            
+            // 跳转到聊天页面
+            window.location.href = `chat.html?user_id=${encodeURIComponent(userId)}`;
+        }
+        
+        // 回车键触发登录
+        document.getElementById('user-id').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                enterChat();
+            }
+        });
+    </script>
+</body>
+</html>

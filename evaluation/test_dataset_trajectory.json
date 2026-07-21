@@ -1,0 +1,38 @@
+[
+  {
+    "category": "order_query",
+    "question": "查订单A1001",
+    "user_id": "1",
+    "expected_output": "您的订单 A1001 当前状态为“待发货”。包含商品：路由器 x1、网线 x2。",
+    "expected_trajectory": [
+      {
+        "type": "human",
+        "content": "查订单A1001"
+      },
+      {
+        "type": "ai",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_1", 
+            "name": "get_order",
+            "args": {
+              "order_no": "A1001",
+              "user_id": "1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "tool",
+        "content": "{\"order_no\": \"A1001\", \"status\": \"待发货\", \"items\": \"路由器 x1、网线 x2\"}",
+        "tool_call_id": "call_1",
+        "name": "get_order"
+      },
+      {
+        "type": "ai",
+        "content": "您的订单 A1001 当前状态为“待发货”。包含商品：路由器 x1、网线 x2。"
+      }
+    ]
+  }
+]

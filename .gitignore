@@ -1,0 +1,38 @@
+# Python 编译文件
+__pycache__/
+*.pyc
+
+# 数据库文件 (不上传，需要本地初始化)
+data/*.db
+
+# 日志文件
+*.log
+
+# 环境变量与密钥 (千万不要上传！)
+.env
+*.key
+
+# Cursor/IDE 配置文件
+.cursor/
+.idea/
+.vscode/
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# Claude 本地设置（可能含敏感信息，如密码/路径）
+.claude/settings.local.json
+
+# 临时文件 & 中间产物
+tmp_*
+# 仅排除根目录下的 .docx/.doc/.xlsx 中间产物，不排除子目录中的知识文档
+/面试题.docx
+/tmp_interview_questions.docx
+/tmp_interview_questions.txt
+/*.doc
+/*.xlsx
+
+# 空文件/占位文件
+3.9.1

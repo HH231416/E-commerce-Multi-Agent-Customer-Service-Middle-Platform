@@ -1,0 +1,352 @@
+[
+  {
+    "category": "chat",
+    "question": "你好",
+    "user_id": "1",
+    "expected_output": "您好！请问有什么可以帮您？",
+    "expected_tool": ""
+  },
+  {
+    "category": "order_query",
+    "question": "查订单A1001",
+    "user_id": "1",
+    "expected_output": "您的订单 A1001 当前状态为“待发货”。包含商品：路由器 x1、网线 x2。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "order_query",
+    "question": "A1002走到哪了",
+    "user_id": "1",
+    "expected_output": "订单 A1002 正在配送中，已到达上海转运中心。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "order_check",
+    "question": "A1001能取消吗",
+    "user_id": "1",
+    "expected_output": "订单 A1001 当前状态：待发货，允许取消。",
+    "expected_tool": "check_cancelable"
+  },
+  {
+    "category": "order_check",
+    "question": "帮我看看A1003能不能退",
+    "user_id": "2",
+    "expected_output": "订单 A1003 当前状态：已签收，不可取消。",
+    "expected_tool": "check_cancelable"
+  },
+  {
+    "category": "order_refund",
+    "question": "我要取消订单A1001",
+    "user_id": "1",
+    "expected_output": "订单 A1001 已提交取消/退款申请，状态更新为：退款中。物流信息：订单已申请退款，商品未发出。",
+    "expected_tool": "refund_order"
+  },
+  {
+    "category": "order_refund",
+    "question": "退款A1003",
+    "user_id": "2",
+    "expected_output": "订单 A1003 当前状态：已签收，不可取消/退款。",
+    "expected_tool": "refund_order"
+  },
+  {
+    "category": "order_error",
+    "question": "查询订单B8888",
+    "user_id": "1",
+    "expected_output": "未找到订单号 B8888 的记录。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "product_info",
+    "question": "夏科键盘参数",
+    "user_id": "4",
+    "expected_output": "商品：夏科有线键鼠套装。规格：接口USB 2.0，键盘104键，鼠标1200DPI。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "product_info",
+    "question": "介绍一下M20洗衣机",
+    "user_id": "4",
+    "expected_output": "M20洗衣机（P002），10公斤大容量，智能变频，节能省水。售价 2580.0 元。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "product_search",
+    "question": "我想买个路由器",
+    "user_id": "4",
+    "expected_output": "找到 1 个符合条件的商品：路由器（P003），价格 298.0 元。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "product_search",
+    "question": "有没有便宜点的鼠标，50块以内的",
+    "user_id": "4",
+    "expected_output": "找到符合条件的商品（如夏科有线键鼠套装），价格 50.0 元。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "product_search",
+    "question": "帮我找找电脑外设",
+    "user_id": "4",
+    "expected_output": "找到多个符合条件的商品：夏科有线键鼠套装、键盘、鼠标等。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "product_basic",
+    "question": "网线多少钱",
+    "user_id": "4",
+    "expected_output": "商品：网线。价格：15.0 元。库存状态：库存充足。",
+    "expected_tool": "get_product_basic_info"
+  },
+  {
+    "category": "product_basic",
+    "question": "显示器还有货吗",
+    "user_id": "4",
+    "expected_output": "商品：显示器。当前库存：10 件。库存状态：库存正常。",
+    "expected_tool": "get_product_basic_info"
+  },
+  {
+    "category": "product_basic",
+    "question": "路由器价格和库存",
+    "user_id": "4",
+    "expected_output": "商品：路由器。价格：298.0 元。库存状态：库存正常（50件）。",
+    "expected_tool": "get_product_basic_info"
+  },
+  {
+    "category": "product_error",
+    "question": "查一下P9999",
+    "user_id": "4",
+    "expected_output": "未找到与「P9999」相关的商品。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "policy_rag",
+    "question": "怎么申请退款？",
+    "user_id": "4",
+    "expected_output": "请进入“我的订单”点击“申请售后”。审核通过后需在包裹内附上写有订单号、联系人电话及退货原因的纸条。",
+    "expected_tool": "search_policy"
+  },
+  {
+    "category": "policy_rag",
+    "question": "几天内可以无理由退货？",
+    "user_id": "4",
+    "expected_output": "在签收之日起 7 日内（含7日），保证商品完好可申请无理由退货。",
+    "expected_tool": "search_policy"
+  },
+  {
+    "category": "order_query",
+    "question": "A1004付钱了吗",
+    "user_id": "1",
+    "expected_output": "订单 A1004 状态：待支付。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "order_check",
+    "question": "A1004可以取消吗",
+    "user_id": "1",
+    "expected_output": "订单 A1004 当前状态：待支付，允许取消。",
+    "expected_tool": "check_cancelable"
+  },
+  {
+    "category": "order_refund",
+    "question": "把A1004退了",
+    "user_id": "1",
+    "expected_output": "订单 A1004 已提交取消/退款申请，状态更新为：退款中。",
+    "expected_tool": "refund_order"
+  },
+  {
+    "category": "product_info",
+    "question": "路由器支持WiFi6吗",
+    "user_id": "4",
+    "expected_output": "是的，规格参数显示：速率AX3000，支持WiFi6。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "product_search",
+    "question": "推荐个200块左右的键盘",
+    "user_id": "4",
+    "expected_output": "找到符合条件的商品：键盘（P005），价格 189.0 元。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "product_basic",
+    "question": "M20洗衣机有现货吗",
+    "user_id": "4",
+    "expected_output": "商品：M20洗衣机。库存状态：库存正常（25件）。",
+    "expected_tool": "get_product_basic_info"
+  },
+  {
+    "category": "chat",
+    "question": "再见",
+    "user_id": "4",
+    "expected_output": "再见，祝您生活愉快！",
+    "expected_tool": ""
+  },
+  {
+    "category": "order_query",
+    "question": "A1005详情",
+    "user_id": "2",
+    "expected_output": "订单 A1005，商品：无线耳机 x2，状态：待发货。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "product_search",
+    "question": "搜索家电类产品",
+    "user_id": "4",
+    "expected_output": "找到符合条件的商品：M20洗衣机。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "policy_rag",
+    "question": "发票怎么开",
+    "user_id": "4",
+    "expected_output": "确认收货后，可在订单详情申请电子发票。",
+    "expected_tool": "search_policy"
+  },
+  {
+    "category": "order_check",
+    "question": "A1006能退款吗",
+    "user_id": "3",
+    "expected_output": "订单 A1006 当前状态：配送中，允许取消。",
+    "expected_tool": "check_cancelable"
+  },
+  {
+    "category": "order_refund",
+    "question": "A1006不要了",
+    "user_id": "3",
+    "expected_output": "订单 A1006 已提交退款申请，正在拦截配送。",
+    "expected_tool": "refund_order"
+  },
+  {
+    "category": "product_info",
+    "question": "鼠标参数",
+    "user_id": "4",
+    "expected_output": "商品：鼠标（P006）。规格：2.4G无线，1600DPI。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "product_basic",
+    "question": "鼠标多少钱",
+    "user_id": "4",
+    "expected_output": "商品：鼠标。价格：89.0 元。",
+    "expected_tool": "get_product_basic_info"
+  },
+  {
+    "category": "order_query",
+    "question": "查A1007",
+    "user_id": "1",
+    "expected_output": "订单 A1007，商品：摄像头 x1，状态：待发货。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "policy_rag",
+    "question": "运费谁出",
+    "user_id": "4",
+    "expected_output": "商品有质量问题或商家发错货由商家承担；不喜欢、拍错或拒收快递由用户承担。",
+    "expected_tool": "search_policy"
+  },
+  {
+    "category": "order_check",
+    "question": "A1008能取消吗",
+    "user_id": "2",
+    "expected_output": "订单 A1008 当前状态：已签收，不可取消。",
+    "expected_tool": "check_cancelable"
+  },
+  {
+    "category": "product_search",
+    "question": "有没有1000块以上的显示器",
+    "user_id": "4",
+    "expected_output": "未找到符合条件（价格≤1000）的商品。或者（如果逻辑是找贵的）找到显示器 P007，1088元。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "product_info",
+    "question": "显示器具体参数",
+    "user_id": "4",
+    "expected_output": "商品：显示器（P007）。规格：27英寸，4K分辨率，IPS面板。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "order_query",
+    "question": "A1009发货没",
+    "user_id": "3",
+    "expected_output": "订单 A1009 状态：待发货。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "policy_rag",
+    "question": "什么时候发货",
+    "user_id": "4",
+    "expected_output": "通常在48小时内发货，若超过48小时未发货将自动赔付5%违约金。",
+    "expected_tool": "search_policy"
+  },
+  {
+    "category": "order_check",
+    "question": "A1010可以退吗",
+    "user_id": "1",
+    "expected_output": "订单 A1010 当前状态：配送中，允许取消。",
+    "expected_tool": "check_cancelable"
+  },
+  {
+    "category": "product_basic",
+    "question": "充电宝有货吗",
+    "user_id": "4",
+    "expected_output": "充电宝库存情况请查询具体商品。",
+    "expected_tool": "get_product_basic_info"
+  },
+  {
+    "category": "edge_case",
+    "question": "帮我写作业",
+    "user_id": "4",
+    "expected_output": "抱歉，我是客服助手，不能帮您写作业。",
+    "expected_tool": ""
+  },
+  {
+    "category": "edge_case",
+    "question": "现在的天气",
+    "user_id": "4",
+    "expected_output": "抱歉，无法查询天气。",
+    "expected_tool": ""
+  },
+  {
+    "category": "chat",
+    "question": "辛苦了",
+    "user_id": "4",
+    "expected_output": "为您服务是我的荣幸！",
+    "expected_tool": ""
+  },
+  {
+    "category": "product_search",
+    "question": "找找品牌A的产品",
+    "user_id": "4",
+    "expected_output": "找到符合条件的商品：路由器（品牌A）。",
+    "expected_tool": "search_products"
+  },
+  {
+    "category": "product_info",
+    "question": "网线详情",
+    "user_id": "4",
+    "expected_output": "商品：网线。描述：超五类网线，支持千兆网络。",
+    "expected_tool": "get_product_info"
+  },
+  {
+    "category": "order_refund",
+    "question": "A1002退款",
+    "user_id": "1",
+    "expected_output": "订单 A1002 已提交退款申请，正在拦截配送。",
+    "expected_tool": "refund_order"
+  },
+  {
+    "category": "order_query",
+    "question": "A1001",
+    "user_id": "1",
+    "expected_output": "查询到订单 A1001，状态待发货。",
+    "expected_tool": "get_order"
+  },
+  {
+    "category": "chat",
+    "question": "Test End",
+    "user_id": "4",
+    "expected_output": "System check complete.",
+    "expected_tool": ""
+  }
+]

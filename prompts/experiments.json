@@ -1,0 +1,11 @@
+{
+  "gateway": {
+    "active": false,
+    "version_a": "1.0.0",
+    "version_b": "1.2.0",
+    "metric": "user_satisfaction",
+    "started_at": null,
+    "min_samples": 500,
+    "description": "v1.2.0 adds multi-turn context tracking and topic switch detection"
+  }
+}

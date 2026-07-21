@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"D:/Anconda/envs/AI/python.exe\" service/main.py)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/chat/test_user_1 -H \"Content-Type: application/json\" -d \"{\\\\\"message\\\\\": \\\\\"你好\\\\\"}\")",
+      "Bash(PYTHONUTF8=1 \"D:/Anconda/envs/AI/python.exe\" -X utf8 service/main.py)",
+      "Bash(\"D:/Anconda/envs/AI/python.exe\" -c \"from langchain_mcp_adapters.client import MultiServerMCPClient; help\\(MultiServerMCPClient.__init__\\)\")",
+      "Bash(D:/Anconda/envs/AI/python.exe -c ' *)",
+      "Bash(\"D:/Anconda/envs/AI/python.exe\" -c \"from langchain_mcp_adapters.sessions import StdioConnection; help\\(StdioConnection.__init__\\)\")"
+    ]
+  }
+}
