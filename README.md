@@ -139,8 +139,4 @@ taskkill /F /PID ID
 ## 📄 许可证
 [MIT License](LICENSE)
 
-## 面试材料
 
-[生产化能力与部署边界](docs/PRODUCTION_CAPABILITIES.md) 说明已落地的认证隔离、受控退款、RAG 发布、可观测和 PostgreSQL 演进，以及当前 Mock 实现的真实边界。
-
-[项目简历与面试讲解手册](docs/INTERVIEW_GUIDE.md) 包含四点简历版、项目讲解主线、高频技术追问及指标口径。
