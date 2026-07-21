@@ -4,7 +4,6 @@
 
 基于 **LangGraph** 和 **Model Context Protocol (MCP)** 构建的电商多智能体客服中台验证项目。采用层级化多智能体架构（Gateway-Manager-SubAgents），覆盖在线咨询、知识检索、人工转接和对话洞察驱动的知识运营闭环。
 
-本项目用于验证企业级 AI 应用的关键设计，不宣称已承载真实生产流量。当前已实现能力、后续演进边界与面试讲解主线以 [企业级设计基线](docs/ENTERPRISE_PROJECT_DESIGN.md) 为准。
 
 ---
 
