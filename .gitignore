@@ -1,38 +1,55 @@
-# Python 编译文件
+# Python 缓存与测试产物
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# 数据库文件 (不上传，需要本地初始化)
-data/*.db
+# 虚拟环境
+.venv/
+venv/
+env/
 
-# 日志文件
-*.log
-
-# 环境变量与密钥 (千万不要上传！)
+# 环境变量、凭据与证书
 .env
+.env.*
+!.env.example
 *.key
+*.pem
+*.p12
+*.pfx
 
-# Cursor/IDE 配置文件
+# 本地数据库、索引、日志与运行产物
+data/*.db
+data/rag_faiss/
+*.log
+.runtime/
+tmp_*
+3.9.1
+
+# IDE 与本地 AI 助手配置
 .cursor/
 .idea/
 .vscode/
+.claude/
+.codebuddy/
+/AGENTS.md
+/CLAUDE.md
 
-# 虚拟环境
-venv/
-.venv/
-env/
-
-# Claude 本地设置（可能含敏感信息，如密码/路径）
-.claude/settings.local.json
-
-# 临时文件 & 中间产物
-tmp_*
-# 仅排除根目录下的 .docx/.doc/.xlsx 中间产物，不排除子目录中的知识文档
-/面试题.docx
+# 个人简历、面试与学习资料
+/AI应用面试题-*.md
+/面试*.md
+/简历*.md
+/*学习计划*.md
+/docs/superpowers/
 /tmp_interview_questions.docx
 /tmp_interview_questions.txt
-/*.doc
-/*.xlsx
 
-# 空文件/占位文件
-3.9.1
+# 根目录临时办公文件和截图
+/*.doc
+/*.docx
+/*.xlsx
+/image.png
+/image-1.png

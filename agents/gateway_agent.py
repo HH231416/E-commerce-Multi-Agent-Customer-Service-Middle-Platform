@@ -3,7 +3,7 @@ from deepagents import create_deep_agent,CompiledSubAgent
 from langchain.agents import create_agent
 from deepagents.middleware.subagents import SubAgentMiddleware
 from langchain.agents.middleware.todo import TodoListMiddleware
-from model import get_model
+from model import get_model, get_middleware_model
 from manager_agent import get_manager_agent
 from langchain.agents import AgentState
 # 导入总结中间件
@@ -54,10 +54,15 @@ async def get_gateway_agent():
 
     # 配置总结中间件
     # 作用：当对话历史过长时，自动总结之前的对话内容，以减少上下文长度并保留关键信息
+    # trigger：上下文累计 32000 token 或消息数达 100 条时触发（以较早者为准）
+    #   - tokens 32000：DashScope OpenAI 兼容模型未提供上下文窗口 profile，使用固定阈值以兼容新版 LangChain
+    #   - messages 100：兜底——短消息堆积到 100 条时也触发
+    # keep：摘要后保留最近 8000 token，确保当前对话轮次不丢失
+    # model：使用独立的 middleware 模型（qwen-turbo），避免切换主模型时影响摘要质量与成本
     summarization = SummarizationMiddleware(
-        model=model,                                    # 复用已获取的模型实例
-        trigger=[("messages", 30)],                     # 触发条件：当消息数量达到 30 条时触发
-        keep=("messages", 30)                           # 保留策略：保留最近的 30 条消息，减少切割 ToolCall 的风险
+        model=get_middleware_model(),
+        trigger=[("tokens", 32000), ("messages", 100)],
+        keep=("tokens", 8000),
     )
     
     # 子智能体使用 StateBackend，文件仅存在于会话状态中，不访问宿主机文件系统。

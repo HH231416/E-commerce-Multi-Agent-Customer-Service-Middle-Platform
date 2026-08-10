@@ -124,6 +124,8 @@ class HumanHandoffManager:
                     resolution_note TEXT,  -- 解决备注
                     source TEXT,  -- 来源渠道
                     sentiment TEXT,  -- 情感状态
+                    idempotency_key TEXT,
+                    conversation_id TEXT,
                     created_at TEXT NOT NULL,  -- 创建时间
                     updated_at TEXT NOT NULL,  -- 更新时间
                     assigned_at TEXT,  -- 指派时间
@@ -134,9 +136,18 @@ class HumanHandoffManager:
             columns = {row[1] for row in conn.execute("PRAGMA table_info(handoff_tickets)")}
             if "tenant_id" not in columns:
                 conn.execute("ALTER TABLE handoff_tickets ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'")
+            if "idempotency_key" not in columns:
+                conn.execute("ALTER TABLE handoff_tickets ADD COLUMN idempotency_key TEXT")
+            if "conversation_id" not in columns:
+                conn.execute("ALTER TABLE handoff_tickets ADD COLUMN conversation_id TEXT")
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_handoff_tenant_status "
                 "ON handoff_tickets(tenant_id, status, created_at)"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_handoff_tenant_idempotency "
+                "ON handoff_tickets(tenant_id, idempotency_key) "
+                "WHERE idempotency_key IS NOT NULL"
             )
             conn.commit()  # 提交 DDL
 
@@ -168,6 +179,8 @@ class HumanHandoffManager:
             "resolution_note": row["resolution_note"],
             "source": row["source"],
             "sentiment": row["sentiment"],
+            "idempotency_key": row["idempotency_key"] if "idempotency_key" in row.keys() else None,
+            "conversation_id": row["conversation_id"] if "conversation_id" in row.keys() else None,
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
             "assigned_at": row["assigned_at"],
@@ -181,6 +194,21 @@ class HumanHandoffManager:
                 "SELECT * FROM handoff_tickets WHERE ticket_id = ? AND tenant_id = ?",
                 (ticket_id, self.tenant_id),
             ).fetchone()
+
+    def get_open_ticket(self, user_id: str, conversation_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Return an existing pending or assigned ticket for a user conversation."""
+        query = (
+            "SELECT * FROM handoff_tickets WHERE tenant_id = ? AND user_id = ? "
+            "AND status IN ('pending', 'assigned')"
+        )
+        params: List[Any] = [self.tenant_id, user_id]
+        if conversation_id:
+            query += " AND (conversation_id = ? OR conversation_id IS NULL)"
+            params.append(conversation_id)
+        query += " ORDER BY created_at DESC LIMIT 1"
+        with closing(self._connect()) as conn:
+            row = conn.execute(query, params).fetchone()
+        return self._serialize_ticket_row(row) if row else None
 
     def _user_requests_transfer(self, message: str) -> bool:
         """检查用户消息中是否包含转人工关键词"""
@@ -227,6 +255,7 @@ class HumanHandoffManager:
         reason: str,
         summary: str,
         context: Optional[Dict[str, Any]] = None,
+        idempotency_key: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         创建转人工工单。
@@ -244,6 +273,15 @@ class HumanHandoffManager:
         - 推送到 Redis 队列（如果可用）
         """
         payload = context or {}  # 上下文，为空则用空字典
+        conversation_id = payload.get("conversation_id")
+        if idempotency_key:
+            with closing(self._connect()) as conn:
+                row = conn.execute(
+                    "SELECT * FROM handoff_tickets WHERE tenant_id = ? AND idempotency_key = ?",
+                    (self.tenant_id, idempotency_key),
+                ).fetchone()
+            if row:
+                return self._serialize_ticket_row(row)
         now = self._utcnow()  # 当前时间
         ticket = {
             "ticket_id": f"TK-{uuid.uuid4().hex[:10].upper()}",  # 生成工单 ID：TK-XXXXXXXXXX
@@ -258,6 +296,8 @@ class HumanHandoffManager:
             "resolution_note": None,  # 无解决备注
             "source": payload.get("source", "chat"),  # 来源：默认聊天
             "sentiment": payload.get("sentiment", "normal"),  # 情感状态
+            "idempotency_key": idempotency_key,
+            "conversation_id": conversation_id,
             "created_at": now,  # 创建时间
             "updated_at": now,  # 更新时间
             "assigned_at": None,  # 尚未指派
@@ -266,34 +306,34 @@ class HumanHandoffManager:
 
         # 写入 SQLite
         with closing(self._connect()) as conn:
-            conn.execute(
-                """
-                INSERT INTO handoff_tickets (
-                    ticket_id, tenant_id, user_id, reason, summary, context_json, status, priority,
-                    assigned_to, resolution_note, source, sentiment,
-                    created_at, updated_at, assigned_at, resolved_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,  # 参数化插入
-                (
-                    ticket["ticket_id"],
-                    ticket["tenant_id"],
-                    ticket["user_id"],
-                    ticket["reason"],
-                    ticket["summary"],
-                    json.dumps(ticket["context"], ensure_ascii=False),  # 上下文序列化为 JSON
-                    ticket["status"],
-                    ticket["priority"],
-                    ticket["assigned_to"],
-                    ticket["resolution_note"],
-                    ticket["source"],
-                    ticket["sentiment"],
-                    ticket["created_at"],
-                    ticket["updated_at"],
-                    ticket["assigned_at"],
-                    ticket["resolved_at"],
-                ),
-            )
-            conn.commit()  # 提交事务
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO handoff_tickets (
+                        ticket_id, tenant_id, user_id, reason, summary, context_json, status, priority,
+                        assigned_to, resolution_note, source, sentiment, idempotency_key, conversation_id,
+                        created_at, updated_at, assigned_at, resolved_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,  # 参数化插入
+                    (
+                        ticket["ticket_id"], ticket["tenant_id"], ticket["user_id"], ticket["reason"],
+                        ticket["summary"], json.dumps(ticket["context"], ensure_ascii=False), ticket["status"],
+                        ticket["priority"], ticket["assigned_to"], ticket["resolution_note"], ticket["source"],
+                        ticket["sentiment"], ticket["idempotency_key"], ticket["conversation_id"],
+                        ticket["created_at"], ticket["updated_at"], ticket["assigned_at"], ticket["resolved_at"],
+                    ),
+                )
+                conn.commit()  # 提交事务
+            except sqlite3.IntegrityError:
+                if not idempotency_key:
+                    raise
+                duplicate = conn.execute(
+                    "SELECT * FROM handoff_tickets WHERE tenant_id = ? AND idempotency_key = ?",
+                    (self.tenant_id, idempotency_key),
+                ).fetchone()
+                if duplicate is None:
+                    raise
+                return self._serialize_ticket_row(duplicate)
 
         # 推送到 Redis 队列（供人工客服系统消费）
         if self.redis is not None:  # Redis 可用

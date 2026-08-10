@@ -11,9 +11,11 @@
 """
 import os  # 读取环境变量（LANGFUSE_PUBLIC_KEY 等）
 import logging  # 日志记录
+from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler  # Langfuse 的 LangChain 回调处理器
 
 _langfuse_handler = None  # 模块级单例缓存
+_langfuse_client = None  # SDK 4 要求先注册客户端，供 CallbackHandler 按公钥查找
 
 def get_langfuse_handler() -> CallbackHandler:
     """
@@ -28,15 +30,18 @@ def get_langfuse_handler() -> CallbackHandler:
     - LANGFUSE_SECRET_KEY: 私钥（Langfuse 自动从环境变量读取）
     - LANGFUSE_HOST: 自部署地址（可选）
     """
-    global _langfuse_handler  # 声明修改模块级变量
+    global _langfuse_handler, _langfuse_client  # 声明修改模块级变量
     if _langfuse_handler is None:  # 首次调用时初始化
         try:
             # Langfuse 4.x: secret_key + host 从环境变量读取
             public_key = os.getenv("LANGFUSE_PUBLIC_KEY")  # 读取公钥
             if public_key:  # 配置了公钥（完整配置）
+                # SDK 4 的 CallbackHandler 只查找已注册客户端，不会自行创建它。
+                _langfuse_client = Langfuse(public_key=public_key)
                 _langfuse_handler = CallbackHandler(public_key=public_key)  # 使用公钥初始化
                 logging.info("[Langfuse] 已初始化")
             else:  # 未配置公钥
+                _langfuse_client = Langfuse()
                 _langfuse_handler = CallbackHandler()  # 使用默认模式（可能连接本地或不做任何事）
                 logging.info("[Langfuse] 未配置密钥，使用默认模式")
         except Exception as e:  # 初始化失败（网络问题/配置错误）

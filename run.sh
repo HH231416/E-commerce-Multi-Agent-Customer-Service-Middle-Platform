@@ -1,18 +1,18 @@
 #!/bin/bash
 # 电商智能客服系统 — 启动脚本
 # 用法: bash run.sh
-# 环境: D:\Anconda\envs\AI
 
 set -e
 
-PYTHON="D:/Anconda/envs/AI/python.exe"
+PYTHON="${PYTHON:-python}"
 
 echo "=== 电商智能客服系统 ==="
 echo "Python: $PYTHON"
 
 # 检查 Python
-if [ ! -f "$PYTHON" ]; then
-    echo "错误: 未找到 $PYTHON"
+if ! command -v "$PYTHON" >/dev/null 2>&1; then
+    echo "错误: 未找到 Python 解释器: $PYTHON"
+    echo "可通过 PYTHON=/path/to/python bash run.sh 指定解释器"
     exit 1
 fi
 

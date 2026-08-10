@@ -35,26 +35,28 @@ class HybridRetriever:
     
     检索流程：
     1. BM25 和 FAISS 并行召回 top_k 个候选文档
-    2. 基于 page_content 前 100 字符去重合并
+    2. 基于 document_id + 片段前 100 字符去重合并
     3. Reranker 对合并结果重排序
     4. 返回 final_k 个最相关文档
     """
 
-    def __init__(self):
+    def __init__(self, use_bm25: bool = True, use_reranker: bool = True):
         self.faiss_retriever = None  # FAISS 向量检索器
         self.bm25_retriever = None  # BM25 关键词检索器
         self.documents = []  # 所有文档片段
+        self.use_bm25 = use_bm25  # 评测对比用：关闭则退化为纯 Dense 检索
+        self.use_reranker = use_reranker  # 评测对比用：关闭则跳过精排
         self._initialized = False  # 是否已初始化
 
     def _ensure_initialized(self):
         """
-        加载离线生成的 FAISS 索引，并在内存建立 BM25 索引。
-        
+        加载离线生成的 FAISS 索引，并按需在内存建立 BM25 索引。
+
         初始化步骤：
         1. 加载 RAG_data 目录下的 .txt/.md/.docx 文档
         2. 递归分割为 500 字符的片段（重叠 50 字符）
         3. 加载 FAISS 向量索引
-        4. 构建 BM25 关键词索引
+        4. 构建 BM25 关键词索引（use_bm25=True 时）
         """
         if self._initialized:  # 已初始化，跳过
             return
@@ -68,12 +70,11 @@ class HybridRetriever:
             logging.warning("RAG 未找到任何知识文档")
             return
 
-        # 文本分割：RecursiveCharacterTextSplitter 优先按段落/句子边界分割
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,  # 每段最多 500 字符（平衡语义完整性和检索粒度）
-            chunk_overlap=50,  # 相邻片段重叠 50 字符（防止关键信息被切断在边界）
+            chunk_size=500,
+            chunk_overlap=50,
         )
-        self.documents = text_splitter.split_documents(docs)  # 分割文档
+        self.documents = text_splitter.split_documents(docs)
         index_file = os.path.join(INDEX_DIR, "index.faiss")
         if not os.path.exists(index_file):
             logging.error("RAG 索引不存在，请先运行: python RAG_data/build_index.py")
@@ -87,53 +88,57 @@ class HybridRetriever:
             search_kwargs={"k": 5},  # 返回 top 5
         )
 
-        # 构建 BM25 索引（关键词检索）
-        self.bm25_retriever = BM25Retriever.from_documents(self.documents)  # 从文档创建 BM25 索引
-        self.bm25_retriever.k = 5  # 返回 top 5
+        # 构建 BM25 索引（关键词检索）；纯 Dense 基线时跳过
+        # 中文必须接 jieba 分词：langchain 默认按空格分词，中文整句会被当一个 token，BM25 退化为随机排序。
+        # 分词统一走 agents.rag_tokenizer（含电商客服领域词典），与 Milvus 稀疏向量路径行为一致
+        if self.use_bm25:
+            try:
+                from agents.rag_tokenizer import tokenize as _tokenize  # 中文分词：领域术语按整词命中
+            except ImportError:  # jieba 缺失时回退默认分词，不中断启动
+                _tokenize = None
+            kwargs = {"preprocess_func": _tokenize} if _tokenize else {}
+            self.bm25_retriever = BM25Retriever.from_documents(self.documents, **kwargs)
+            self.bm25_retriever.k = 5  # 返回 top 5
 
         self._initialized = True  # 标记已初始化
         logging.info("RAG 检索器已加载，知识版本=%s，片段数=%s", KNOWLEDGE_VERSION, len(self.documents))
 
     def retrieve(self, query: str, top_k: int = 5, final_k: int = 3) -> List[Document]:
         """
-        执行混合检索：BM25+FAISS 并行召回 → 去重 → Reranker 重排序 → 返回 top final_k。
-        
+        执行混合检索：BM25+FAISS 并行召回 → RRF 融合去重 → Reranker 重排序 → 返回 top final_k。
+
         输入：
         - query: 用户查询字符串
         - top_k: 每路召回数量（默认 5）
         - final_k: 最终返回数量（默认 3）
-        
+
         输出：相关文档列表（按相关性降序）
-        
+
         失败处理：
         - 检索器未初始化 → 返回空列表
-        - Reranker 不可用 → 跳过多路合并去重后直接返回
+        - Reranker 不可用 → 跳过重排序，直接使用 RRF 融合后的顺序
         """
         self._ensure_initialized()  # 确保已初始化
 
-        if not self.bm25_retriever or not self.faiss_retriever:  # 检索器不可用
+        if not self.faiss_retriever:  # 检索器不可用
             return []
 
-        # Step 1: 多路召回（BM25 + FAISS 并行）
-        bm25_results = self.bm25_retriever.get_relevant_documents(query)  # BM25 关键词召回
-        faiss_results = self.faiss_retriever.get_relevant_documents(query)  # FAISS 语义召回
-
-        # Step 2: 去重合并（基于 page_content 前 100 字符 hash）
-        # 为什么用前 100 字符而非全文 hash：chunk_overlap 导致相邻片段部分重复，
-        #     前 100 字符足以区分不同片段，同时容忍少量尾部差异
-        seen = set()  # 已见过的 hash 集合
-        merged = []  # 去重后的文档列表
-        for doc in bm25_results + faiss_results:  # 先 BM25 后 FAISS（BM25 精确匹配优先级更高）
-            key = hash(doc.page_content[:100])  # 基于前 100 字符生成 hash
-            if key not in seen:  # 未重复
-                seen.add(key)  # 记录 hash
-                merged.append(doc)  # 添加到合并列表
+        # Step 1: 多路召回（BM25 可用时与 FAISS 并行）
+        # .invoke() 兼容 LangChain 1.x（VectorStoreRetriever/BM25Retriever 已移除公开的 get_relevant_documents）
+        faiss_results = self.faiss_retriever.invoke(query)  # FAISS 语义召回
+        if self.bm25_retriever is not None:
+            bm25_results = self.bm25_retriever.invoke(query)  # BM25 关键词召回
+            # Step 2: RRF 融合去重。BM25 和 FAISS 各带独立排名，用 1/(k+rank)
+            # 加权融合，避免"BM25 无条件排前"导致精确术语路污染 top-3。
+            merged = _rrf_fuse(bm25_results, faiss_results)
+        else:
+            merged = faiss_results
 
         if not merged:  # 两路都没召回结果
             return []
 
         # Step 3: Reranker 重排序（用 CrossEncoder 对 query-doc 对打分）
-        reranker = get_reranker()  # 获取共享 Reranker（可能为 None）
+        reranker = get_reranker() if self.use_reranker else None  # 获取共享 Reranker（可能为 None）
         if reranker and len(merged) > 1:  # 有 Reranker 且有多于 1 个候选
             pairs = [(query, doc.page_content[:512]) for doc in merged]  # 构造 query-doc 对（截断到 512）
             scores = reranker.predict(pairs, show_progress_bar=False)  # 批量打分
@@ -170,7 +175,10 @@ def _load_documents(directory: str) -> List[Document]:
                 logging.warning("RAG 无法加载文档 %s: %s", filename, e)
                 continue  # 跳过该文件
         if content:  # 成功读取到内容
-            document_id = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+            # 文件名 + 内容共同标识一份知识文档，避免不同文件正文相同时发生冲突。
+            document_id = hashlib.sha256(
+                f"{filename}\0{content}".encode("utf-8")
+            ).hexdigest()[:16]
             documents.append(Document(
                 page_content=content,
                 metadata={
@@ -182,6 +190,46 @@ def _load_documents(directory: str) -> List[Document]:
             ))
     logging.info("RAG 已加载 %s 份知识文档", len(documents))
     return documents
+
+
+def _deduplicate_documents(documents: List[Document]) -> List[Document]:
+    """按 document_id + 片段前 100 字符去重，保留候选列表中首次出现的文档。"""
+    seen: set[tuple[str, str]] = set()
+    deduplicated = []
+    for doc in documents:
+        document_id = doc.metadata.get("document_id")
+        if document_id is None:
+            raise ValueError("知识片段缺少 document_id；请重新构建索引")
+        key = (str(document_id), doc.page_content[:100])
+        if key not in seen:
+            seen.add(key)
+            deduplicated.append(doc)
+    return deduplicated
+
+
+def _rrf_fuse(bm25_results: List[Document], faiss_results: List[Document], k: int = 60) -> List[Document]:
+    """
+    多路召回 RRF（Reciprocal Rank Fusion）融合排序。
+
+    对每个片段，分别按其在 BM25 路和 FAISS 路中的排名计分：score += 1/(k + rank)。
+    两路都命中的片段会叠加分数，天然高于单一路径命中的片段；
+    相比"BM25 无条件排前"，RRF 让语义与关键词两路互相校验，融合排序更稳。
+
+    用 document_id 作为片段唯一键（同源文档的两个不同片段 id 不同，不会误合并）。
+    """
+    scores: dict[str, float] = {}
+    docs: dict[str, Document] = {}
+    for rank, doc in enumerate(bm25_results + faiss_results, start=1):
+        document_id = doc.metadata.get("document_id")
+        if document_id is None:
+            raise ValueError("知识片段缺少 document_id；请重新构建索引")
+        key = str(document_id)
+        # 两路拼接后 rank 区间不同，为公平起见两路都从 1 开始计分，而非拼接后的连续 rank
+        road_rank = rank if rank <= len(bm25_results) else rank - len(bm25_results)
+        scores[key] = scores.get(key, 0.0) + 1.0 / (k + road_rank)
+        docs[key] = doc  # 后写入的（FAISS 路）优先保留，与去重时语义路优先一致
+    ranked = sorted(docs.keys(), key=lambda d: scores[d], reverse=True)
+    return [docs[key] for key in ranked]
 
 
 def build_persistent_index() -> int:

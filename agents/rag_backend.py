@@ -1,4 +1,4 @@
-"""RAG 后端选择器。Milvus 为统一生产后端（稠密+稀疏混合检索+Reranker），FAISS 仅用于本地开发回退。"""
+"""RAG 后端选择器。生产检索统一通过 Milvus 完成稠密、稀疏混合检索与精排。"""
 from __future__ import annotations
 
 import os
@@ -17,12 +17,12 @@ def get_retriever():
     raise ValueError(f"不支持的 RAG_BACKEND: {backend}")
 
 
-def build_index() -> int:
+def build_index(version: str | None = None) -> int:
     backend = os.getenv("RAG_BACKEND", "milvus").lower()
     if backend == "milvus":
         from agents.rag_milvus import build_milvus_index
 
-        return build_milvus_index()
+        return build_milvus_index(version=version)
     if backend == "faiss":
         from agents.rag_hybrid import build_persistent_index
 

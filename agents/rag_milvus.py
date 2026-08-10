@@ -1,7 +1,7 @@
 """Milvus 混合检索后端：稠密向量 + BM25 稀疏向量 + BGE Reranker 精排。
 
 设计意图：
-- 统一后端：以 Milvus 为唯一生产检索后端，FAISS 仅作本地开发回退
+- 统一后端：以 Milvus 为生产检索后端
 - 混合检索：稠密向量负责语义泛化（"怎么退款"→"退款流程"），BM25 稀疏向量负责精确术语匹配（"7天无理由"）
 - 精排增强：BGE Reranker 作为 CrossEncoder 对候选集二次打分，提升 top-3 精度
 - 版本隔离：知识版本以独立 Collection 存储，BM25 模型同步版本化
@@ -20,6 +20,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from agents.rag_reranker import get_reranker
+from agents.version_registry import get_active_version
 
 # ---------------------------------------------------------------------------
 # 路径与常量
@@ -27,7 +28,7 @@ from agents.rag_reranker import get_reranker
 DATA_DIR = os.path.join(os.path.dirname(__file__), "../RAG_data")
 MILVUS_URI = os.getenv("MILVUS_URI", "http://localhost:19530")
 MILVUS_COLLECTION = os.getenv("MILVUS_COLLECTION", "customer_service_knowledge")
-KNOWLEDGE_VERSION = os.getenv("KNOWLEDGE_VERSION", "unversioned")
+KNOWLEDGE_VERSION = os.getenv("KNOWLEDGE_VERSION", "unversioned")  # 构建/兜底用
 BM25_MODEL_DIR = os.getenv(
     "BM25_MODEL_DIR",
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/bm25")),
@@ -38,9 +39,16 @@ _weights = os.getenv("RAG_HYBRID_WEIGHTS", "0.7,0.3")
 DENSE_WEIGHT, SPARSE_WEIGHT = (float(w) for w in _weights.split(",", 1))
 
 
-def _collection_name() -> str:
-    version = re.sub(r"[^A-Za-z0-9_]", "_", KNOWLEDGE_VERSION)
-    return f"{MILVUS_COLLECTION}_{version}"[:240]
+def _active_version() -> str:
+    """返回当前活跃版本：优先读版本注册表（支持运行时秒级回滚），无注册表时回退环境变量。"""
+    return get_active_version()
+
+
+def _collection_name(version: str | None = None) -> str:
+    """Collection 名 = 基础名 + 版本号。version 为空时取当前活跃版本。"""
+    v = version if version is not None else _active_version()
+    normalized = re.sub(r"[^A-Za-z0-9_]", "_", v)
+    return f"{MILVUS_COLLECTION}_{normalized}"[:240]
 
 
 def _client():
@@ -69,10 +77,10 @@ class BM25SparseEncoder:
 
     def fit(self, corpus: list[str]) -> None:
         """在中文语料上拟合 BM25，构建词汇表和 IDF。"""
-        import jieba
         from rank_bm25 import BM25Okapi
+        from agents.rag_tokenizer import tokenize  # 与 FAISS 路径共用同一套分词（含领域词典）
 
-        tokenized = [jieba.lcut(text) for text in corpus]
+        tokenized = [tokenize(text) for text in corpus]
         bm25 = BM25Okapi(tokenized)
         # 提取 IDF（BM25Okapi 拟合后存储在实例的 idf 属性中）
         self.idf = dict(bm25.idf) if isinstance(bm25.idf, dict) else {}
@@ -120,9 +128,9 @@ class BM25SparseEncoder:
             raise RuntimeError("BM25SparseEncoder 尚未拟合或加载模型")
 
     def _encode_one(self, text: str) -> dict:
-        import jieba
+        from agents.rag_tokenizer import tokenize
 
-        tokens = jieba.lcut(text)
+        tokens = tokenize(text)
         vec: dict[int, float] = {}
         # 计算 TF（词频统计）
         tf_map: dict[str, int] = {}
@@ -141,13 +149,16 @@ class BM25SparseEncoder:
         return vec
 
 
-def _bm25_model_path() -> str:
-    return os.path.join(BM25_MODEL_DIR, f"{_collection_name()}.pkl")
+def _bm25_model_path(collection: str | None = None) -> str:
+    return os.path.join(BM25_MODEL_DIR, f"{collection or _collection_name()}.pkl")
 
 
-def _load_bm25_encoder() -> BM25SparseEncoder | None:
-    """加载与当前知识版本对应的 BM25 模型，不存在时返回 None。"""
-    path = _bm25_model_path()
+def _load_bm25_encoder(collection: str | None = None) -> BM25SparseEncoder | None:
+    """加载与指定 collection（版本）对应的 BM25 模型，不存在时返回 None。
+
+    collection 缺省时按当前活跃版本定位，因此切换版本后能加载到对应模型。
+    """
+    path = _bm25_model_path(collection)
     if not os.path.exists(path):
         logging.info("[BM25] 模型未找到 (%s)，降级为纯稠密检索", path)
         return None
@@ -164,14 +175,23 @@ def _load_bm25_encoder() -> BM25SparseEncoder | None:
 # Milvus 检索器
 # ---------------------------------------------------------------------------
 class MilvusRetriever:
-    """Milvus 混合检索器：dense + sparse hybrid_search → Reranker 精排。"""
+    """Milvus 混合检索器：dense + sparse hybrid_search → Reranker 精排。
 
-    def __init__(self) -> None:
+    use_bm25 / use_reranker：评测对比用开关（纯 Dense 基线 = 两者关闭）。
+    运行时版本切换：每次检索重新解析活跃版本，切换版本指针后无需重启，
+    检索器自动加载新版本对应的 Collection 与 BM25 模型（秒级回滚）。
+    """
+
+    def __init__(self, use_bm25: bool = True, use_reranker: bool = True) -> None:
         self.client = None
         self.embeddings = None
         self.bm25: BM25SparseEncoder | None = None
+        self.use_bm25 = use_bm25
+        self.use_reranker = use_reranker
+        self._loaded_collection: str | None = None  # 当前已加载的 Collection 名
 
     def _ensure_ready(self) -> None:
+        collection = _collection_name()  # 每次解析当前活跃版本对应的 Collection
         if self.client is None:
             self.client = _client()
         if self.embeddings is None:
@@ -180,12 +200,16 @@ class MilvusRetriever:
             except ImportError:
                 from model import get_embeddings
             self.embeddings = get_embeddings()
-        if not self.client.has_collection(_collection_name()):
-            raise RuntimeError(f"Milvus 索引不存在: {_collection_name()}，请先构建并发布知识版本")
-        self.client.load_collection(_collection_name())
-        # 延迟加载 BM25（失败时降级为纯稠密）
-        if self.bm25 is None:
-            self.bm25 = _load_bm25_encoder()
+        # 版本切换（或首次加载）时：加载新 Collection 与对应的 BM25 模型
+        if self._loaded_collection != collection:
+            if not self.client.has_collection(collection):
+                raise RuntimeError(f"Milvus 索引不存在: {collection}，请先构建并发布知识版本")
+            self.client.load_collection(collection)
+            self._loaded_collection = collection
+            # 清空旧版本的 BM25 模型，按新版本重新加载（失败时降级为纯稠密）
+            self.bm25 = None
+            if self.use_bm25:
+                self.bm25 = _load_bm25_encoder(collection)
 
     # ---- 检索入口 ----------------------------------------------------------
 
@@ -215,7 +239,7 @@ class MilvusRetriever:
             return []
 
         # Reranker 精排
-        reranker = get_reranker()
+        reranker = get_reranker() if self.use_reranker else None
         if reranker and len(documents) > 1:
             pairs = [(query, doc.page_content[:512]) for doc in documents]
             try:
@@ -295,8 +319,11 @@ class MilvusRetriever:
 # ---------------------------------------------------------------------------
 # 索引构建
 # ---------------------------------------------------------------------------
-def build_milvus_index() -> int:
+def build_milvus_index(version: str | None = None) -> int:
     """构建并发布一个不可变知识版本的 Milvus 混合索引。
+
+    version：要构建的知识版本号，缺省时取 KNOWLEDGE_VERSION 环境变量
+    （构建固定的版本，而非 registry 的活跃版本——避免"构建当前活跃版"歧义）。
 
     流程：
     1. 加载并分割文档
@@ -306,6 +333,7 @@ def build_milvus_index() -> int:
     5. 插入数据并建立索引
     6. 持久化 BM25 模型
     """
+    build_version = version or KNOWLEDGE_VERSION
     # 加载文档
     try:
         from agents.rag_hybrid import _load_documents
@@ -332,14 +360,14 @@ def build_milvus_index() -> int:
     try:
         bm25_encoder.fit(corpus_texts)
         sparse_vectors = bm25_encoder.encode_documents(corpus_texts)
-        bm25_encoder.save(_bm25_model_path())
+        bm25_encoder.save(_bm25_model_path(_collection_name(build_version)))
     except Exception as exc:
         logging.warning("[Milvus] BM25 拟合失败，仅使用稠密向量: %s", exc)
         bm25_encoder = None
 
     # 建库
     client = _client()
-    collection = _collection_name()
+    collection = _collection_name(build_version)
     if client.has_collection(collection):
         raise RuntimeError(
             f"Milvus 知识版本已存在: {collection}；请提升 KNOWLEDGE_VERSION 后再发布"
@@ -381,7 +409,7 @@ def build_milvus_index() -> int:
                 "document_id",
                 hashlib.sha256(doc.page_content.encode("utf-8")).hexdigest()[:16],
             ),
-            "knowledge_version": KNOWLEDGE_VERSION[:128],
+            "knowledge_version": build_version[:128],
         }
         # 只在 BM25 成功拟合时写入稀疏向量
         if bm25_encoder is not None and i - 1 < len(sparse_vectors):

@@ -15,6 +15,7 @@ from service.settings import settings
 
 class TicketStore:
     TRANSFER_KEYWORDS = HumanHandoffManager.TRANSFER_KEYWORDS
+    HIGH_RISK_TAGS = {"payment", "refund", "complaint", "privacy"}
 
     def __init__(self, tenant_id: str, db_path: str | None = None) -> None:
         self.tenant_id = tenant_id
@@ -30,12 +31,26 @@ class TicketStore:
             self._local = HumanHandoffManager(tenant_id=self.tenant_id, db_path=self.db_path)
         return self._local
 
-    async def should_transfer(self, user_id: str, message: str, sentiment: str = "normal") -> tuple[bool, str]:
+    async def should_transfer(
+        self,
+        user_id: str,
+        message: str,
+        sentiment: str = "normal",
+        ai_confidence: str = "high",
+        consecutive_failures: int = 0,
+        risk_tags: list[str] | None = None,
+    ) -> tuple[bool, str]:
         del user_id
         if any(keyword in message for keyword in self.TRANSFER_KEYWORDS):
-            return True, "用户明确要求转人工"
+            return True, "user_requested_human"
         if sentiment == "angry":
-            return True, "检测到用户情绪愤怒"
+            return True, "high_negative_sentiment"
+        if set(risk_tags or ()) & self.HIGH_RISK_TAGS:
+            return True, "high_risk_business_intent"
+        if sentiment == "frustrated" and consecutive_failures >= 2:
+            return True, "repeated_unresolved_frustration"
+        if ai_confidence == "low":
+            return True, "low_ai_confidence"
         return False, ""
 
     async def create_transfer(
@@ -45,14 +60,30 @@ class TicketStore:
         reason: str,
         summary: str,
         context: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         if not self._uses_postgres:
-            return await self._sqlite().create_transfer(user_id, reason, summary, context)
+            return await self._sqlite().create_transfer(
+                user_id, reason, summary, context, idempotency_key=idempotency_key
+            )
 
         engine = get_database_engine()
         if engine is None:
             raise RuntimeError("生产工单存储未配置 PostgreSQL")
         payload = context or {}
+        if idempotency_key:
+            async with engine.connect() as connection:
+                existing = (
+                    await connection.execute(
+                        text(
+                            "SELECT * FROM support_tickets WHERE tenant_id = :tenant_id "
+                            "AND idempotency_key = :idempotency_key"
+                        ),
+                        {"tenant_id": self.tenant_id, "idempotency_key": idempotency_key},
+                    )
+                ).mappings().first()
+            if existing:
+                return self._serialize(dict(existing))
         ticket_id = f"TK-{uuid.uuid4().hex[:16].upper()}"
         now = datetime.now(UTC)
         ticket = {
@@ -68,6 +99,8 @@ class TicketStore:
             "resolution_note": None,
             "source": payload.get("source", "chat"),
             "sentiment": payload.get("sentiment", "normal"),
+            "idempotency_key": idempotency_key,
+            "conversation_id": payload.get("conversation_id"),
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "assigned_at": None,
@@ -81,22 +114,62 @@ class TicketStore:
                 ),
                 {"tenant_id": self.tenant_id, "name": self.tenant_id},
             )
-            await connection.execute(
+            inserted = (
+                await connection.execute(
                 text(
                     """
                     INSERT INTO support_tickets(
                         ticket_id, tenant_id, user_id, status, priority, summary, context_json,
-                        reason, source, sentiment, created_at, updated_at
+                        reason, source, sentiment, idempotency_key, conversation_id, created_at, updated_at
                     ) VALUES (
                         :ticket_id, :tenant_id, :user_id, :status, :priority, :summary,
-                        CAST(:context_json AS JSONB), :reason, :source, :sentiment, :created_at, :updated_at
-                    )
+                        CAST(:context_json AS JSONB), :reason, :source, :sentiment, :idempotency_key,
+                        :conversation_id, :created_at, :updated_at
+                    ) ON CONFLICT (tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+                    DO NOTHING
+                    RETURNING *
                     """
                 ),
                 {**ticket, "context_json": json.dumps(payload, ensure_ascii=False)},
             )
+            ).mappings().first()
+            if inserted is None:
+                duplicate = (
+                    await connection.execute(
+                        text(
+                            "SELECT * FROM support_tickets WHERE tenant_id = :tenant_id "
+                            "AND idempotency_key = :idempotency_key"
+                        ),
+                        {"tenant_id": self.tenant_id, "idempotency_key": idempotency_key},
+                    )
+                ).mappings().first()
+                if duplicate is not None:
+                    return self._serialize(dict(duplicate))
+                raise RuntimeError("Unable to create handoff ticket")
             await self._append_event(connection, ticket_id, "created", user_id, {"reason": reason})
         return ticket
+
+    async def get_open_ticket(self, user_id: str, conversation_id: str | None = None) -> dict[str, Any] | None:
+        if not self._uses_postgres:
+            return self._sqlite().get_open_ticket(user_id, conversation_id)
+        engine = get_database_engine()
+        if engine is None:
+            raise RuntimeError("PostgreSQL ticket store is not configured")
+        clause = " AND (conversation_id = :conversation_id OR conversation_id IS NULL)" if conversation_id else ""
+        params: dict[str, Any] = {"tenant_id": self.tenant_id, "user_id": user_id}
+        if conversation_id:
+            params["conversation_id"] = conversation_id
+        async with engine.connect() as connection:
+            row = (
+                await connection.execute(
+                    text(
+                        "SELECT * FROM support_tickets WHERE tenant_id = :tenant_id AND user_id = :user_id "
+                        "AND status IN ('pending', 'assigned')" + clause + " ORDER BY created_at DESC LIMIT 1"
+                    ),
+                    params,
+                )
+            ).mappings().first()
+        return self._serialize(dict(row)) if row else None
 
     async def list_tickets(self, status: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
         if not self._uses_postgres:
@@ -228,9 +301,9 @@ class TicketStore:
 
     @staticmethod
     def _priority(reason: str, sentiment: str | None) -> str:
-        if sentiment == "angry" or "愤怒" in reason:
+        if sentiment == "angry" or reason in {"high_negative_sentiment", "high_risk_business_intent"}:
             return "high"
-        if sentiment == "frustrated" or "置信度不足" in reason:
+        if sentiment == "frustrated" or reason in {"low_ai_confidence", "repeated_unresolved_frustration"}:
             return "medium"
         return "normal"
 
@@ -255,6 +328,8 @@ class TicketStore:
             "resolution_note": row.get("resolution_note"),
             "source": row.get("source"),
             "sentiment": row.get("sentiment"),
+            "idempotency_key": row.get("idempotency_key"),
+            "conversation_id": row.get("conversation_id"),
             "created_at": row.get("created_at"),
             "updated_at": row.get("updated_at"),
             "assigned_at": row.get("assigned_at"),

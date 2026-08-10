@@ -34,6 +34,38 @@ class TicketStoreDevelopmentTests(unittest.TestCase):
         self.assertEqual("resolved", resolved["status"])
         self.assertIsNone(foreign_ticket)
 
+    def test_handoff_idempotency_and_open_conversation_reuse(self):
+        async def scenario():
+            store = TicketStore("tenant-a", self.db_path)
+            payload = {"sentiment": "frustrated", "conversation_id": "tenant-a:user-1"}
+            first = await store.create_transfer(
+                user_id="user-1",
+                reason="low_ai_confidence",
+                summary="need help",
+                context=payload,
+                idempotency_key="handoff-request-0001",
+            )
+            repeated = await store.create_transfer(
+                user_id="user-1",
+                reason="low_ai_confidence",
+                summary="need help",
+                context=payload,
+                idempotency_key="handoff-request-0001",
+            )
+            open_ticket = await store.get_open_ticket("user-1", "tenant-a:user-1")
+            decision = await store.should_transfer(
+                user_id="user-1",
+                message="",
+                sentiment="frustrated",
+                consecutive_failures=2,
+            )
+            return first, repeated, open_ticket, decision
+
+        first, repeated, open_ticket, decision = asyncio.run(scenario())
+        self.assertEqual(first["ticket_id"], repeated["ticket_id"])
+        self.assertEqual(first["ticket_id"], open_ticket["ticket_id"])
+        self.assertEqual((True, "repeated_unresolved_frustration"), decision)
+
 
 if __name__ == "__main__":
     unittest.main()

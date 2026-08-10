@@ -95,21 +95,21 @@
     "question": "网线多少钱",
     "user_id": "4",
     "expected_output": "商品：网线。价格：15.0 元。库存状态：库存充足。",
-    "expected_tool": "get_product_basic_info"
+    "expected_tool": "get_product_info"
   },
   {
     "category": "product_basic",
     "question": "显示器还有货吗",
     "user_id": "4",
     "expected_output": "商品：显示器。当前库存：10 件。库存状态：库存正常。",
-    "expected_tool": "get_product_basic_info"
+    "expected_tool": "get_product_info"
   },
   {
     "category": "product_basic",
     "question": "路由器价格和库存",
     "user_id": "4",
     "expected_output": "商品：路由器。价格：298.0 元。库存状态：库存正常（50件）。",
-    "expected_tool": "get_product_basic_info"
+    "expected_tool": "get_product_info"
   },
   {
     "category": "product_error",
@@ -172,7 +172,7 @@
     "question": "M20洗衣机有现货吗",
     "user_id": "4",
     "expected_output": "商品：M20洗衣机。库存状态：库存正常（25件）。",
-    "expected_tool": "get_product_basic_info"
+    "expected_tool": "get_product_info"
   },
   {
     "category": "chat",
@@ -228,7 +228,7 @@
     "question": "鼠标多少钱",
     "user_id": "4",
     "expected_output": "商品：鼠标。价格：89.0 元。",
-    "expected_tool": "get_product_basic_info"
+    "expected_tool": "get_product_info"
   },
   {
     "category": "order_query",
@@ -291,7 +291,7 @@
     "question": "充电宝有货吗",
     "user_id": "4",
     "expected_output": "充电宝库存情况请查询具体商品。",
-    "expected_tool": "get_product_basic_info"
+    "expected_tool": "get_product_info"
   },
   {
     "category": "edge_case",

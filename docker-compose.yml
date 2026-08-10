@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:7.4-alpine
-    command: redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"
+    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:?请在 .env 中设置 REDIS_PASSWORD}"
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?请在 .env 中设置 REDIS_PASSWORD}
     volumes:

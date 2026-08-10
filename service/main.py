@@ -13,11 +13,12 @@ import asyncio  # 异步并发，用于超时控制和重试退避
 import json  # JSON 序列化/反序列化
 import logging  # 日志记录
 import os  # 读取环境变量
+import re
 import sys  # 路径操作
 import time  # 时间戳，用于性能计时
 from contextlib import asynccontextmanager  # 异步上下文管理器，用于应用生命周期管理
 
-from fastapi import Depends, FastAPI, HTTPException, Request  # FastAPI 核心组件
+from fastapi import Depends, FastAPI, Header, HTTPException, Request  # FastAPI 核心组件
 from fastapi.responses import JSONResponse, Response  # JSON 响应封装
 from fastapi.staticfiles import StaticFiles  # 静态文件挂载
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage  # LangChain 消息类型
@@ -114,6 +115,20 @@ def _get_cache():
     except Exception as exc:
         logging.warning("[API] 缓存模块不可用: %s", exc)
         return None
+
+
+def _active_knowledge_version() -> str:
+    """解析当前活跃知识版本号，用于缓存键的版本隔离。
+
+    优先读版本注册表：版本指针切换（秒级回滚）后，下一次请求立即用新版本号
+    构造缓存键，旧版本窗口期写入的缓存自然失效；注册表不可用时回退环境变量。
+    """
+    try:
+        from agents.version_registry import get_active_version
+        return get_active_version()
+    except Exception as exc:
+        logging.warning("[API] 版本注册表读取失败，回退环境变量: %s", exc)
+        return settings.knowledge_version
 
 
 def _build_callbacks(session_id: str, tenant_id: str):
@@ -230,7 +245,94 @@ def _require_subject(path_user_id: str, principal: Principal) -> None:
         raise HTTPException(status_code=403, detail="不允许访问其他用户资源")
 
 
-async def _run_chat_request(principal: Principal, user_message: str) -> dict:
+async def _prepare_handoff(
+    principal: Principal,
+    user_message: str,
+    *,
+    source: str,
+    idempotency_key: str | None = None,
+) -> dict | None:
+    """Create one auditable handoff ticket or return the active conversation ticket."""
+    session_id = f"{principal.tenant_id}:{principal.subject}"
+    store = TicketStore(tenant_id=principal.tenant_id)
+    active_ticket = await store.get_open_ticket(principal.subject, session_id)
+    if active_ticket:
+        return {**active_ticket, "handoff_reason": "active_handoff", "reused": True}
+
+    history = []
+    try:
+        state = await gateway_agent.aget_state(_session_config(principal))
+        if state and state.values and "messages" in state.values:
+            history = _serialize_history_messages(state.values["messages"])[-20:]
+    except Exception:
+        logging.warning("[Handoff] Unable to capture conversation snapshot", exc_info=True)
+    recent_failures = 0
+    for item in reversed(history):
+        if item.get("role") != "assistant":
+            continue
+        content = str(item.get("content", ""))
+        if any(marker in content for marker in ("暂时无法处理", "请稍后重试", "服务暂时不可用")):
+            recent_failures += 1
+        else:
+            break
+
+    analysis = get_sentiment_detector().analyze(user_message)
+    should_transfer, reason = await store.should_transfer(
+        user_id=principal.subject,
+        message=user_message,
+        sentiment=analysis["sentiment"],
+        risk_tags=analysis["risk_tags"],
+        ai_confidence="low" if recent_failures else "high",
+        consecutive_failures=recent_failures,
+    )
+    if not should_transfer:
+        return None
+
+    history.append({"role": "user", "content": user_message})
+    ticket = await store.create_transfer(
+        user_id=principal.subject,
+        reason=reason,
+        summary=user_message[:200],
+        context={
+            "source": source,
+            "conversation_id": session_id,
+            "sentiment": analysis["sentiment"],
+            "sentiment_analysis": analysis,
+            "conversation": history,
+            "trigger_reason": reason,
+        },
+        idempotency_key=idempotency_key,
+    )
+    return {**ticket, "handoff_reason": reason, "reused": False}
+
+
+def _handoff_chat_response(ticket: dict) -> dict:
+    return {
+        "response": "已为您转接人工客服，请稍候。",
+        "role": "assistant",
+        "transferred": True,
+        "ticket_id": ticket["ticket_id"],
+        "reason": ticket["handoff_reason"],
+        "priority": ticket["priority"],
+        "reused": ticket.get("reused", False),
+        "cached": False,
+        "degraded": False,
+        "retries": 0,
+    }
+
+
+def _validate_idempotency_key(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not 16 <= len(normalized) <= 128 or re.fullmatch(r"[A-Za-z0-9_-]+", normalized) is None:
+        raise HTTPException(status_code=422, detail="Idempotency-Key must be 16-128 safe characters")
+    return normalized
+
+
+async def _run_chat_request(
+    principal: Principal, user_message: str, idempotency_key: str | None = None
+) -> dict:
     """
     执行一次完整的对话请求，流程：
     1. 检查 gateway_agent 就绪状态
@@ -250,6 +352,12 @@ async def _run_chat_request(principal: Principal, user_message: str) -> dict:
     if callbacks:
         config["callbacks"] = callbacks
 
+    handoff_ticket = await _prepare_handoff(
+        principal, user_message, source="chat", idempotency_key=idempotency_key
+    )
+    if handoff_ticket:
+        return _handoff_chat_response(handoff_ticket)
+
     # 每次请求前检查并修复可能残留的 tool call 状态
     await _repair_incomplete_tool_call(config)
 
@@ -260,7 +368,7 @@ async def _run_chat_request(principal: Principal, user_message: str) -> dict:
         cached_reply = await cache.lookup(
             user_message,
             tenant_id=principal.tenant_id,
-            knowledge_version=settings.knowledge_version,
+            knowledge_version=_active_knowledge_version(),
         )
         if cached_reply:
             logging.info("[API] 缓存命中 session=%s", session_id)
@@ -297,7 +405,7 @@ async def _run_chat_request(principal: Principal, user_message: str) -> dict:
             reply=ai_response,
             transferred=False,
             tenant_id=principal.tenant_id,
-            knowledge_version=settings.knowledge_version,
+            knowledge_version=_active_knowledge_version(),
         )
 
     return {
@@ -437,6 +545,7 @@ async def get_chat_history(user_id: str, principal: Principal = Depends(get_curr
 async def chat_with_agent(
     user_id: str,
     payload: ChatRequest,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     principal: Principal = Depends(get_current_principal),
 ):
 
@@ -447,7 +556,11 @@ async def chat_with_agent(
         user_message = payload.message.strip()
 
         logging.info("[API] 收到对话请求 tenant=%s", principal.tenant_id)
-        result = await _run_chat_request(principal=principal, user_message=user_message)
+        result = await _run_chat_request(
+            principal=principal,
+            user_message=user_message,
+            idempotency_key=_validate_idempotency_key(idempotency_key),
+        )
         # 记录请求延迟，用于性能监控和 SLA 保障
         result["latency_ms"] = int((time.time() - request_started_at) * 1000)
         return JSONResponse(content=result)
@@ -483,24 +596,15 @@ async def chat_with_agent_stream(
         config = _session_config(principal)
         await _repair_incomplete_tool_call(config)
 
-        # 前置情感检测：轻量级模型拦截，避免不必要的 LLM 调用
-        sentiment_detector = get_sentiment_detector()
-        handoff_manager = TicketStore(tenant_id=principal.tenant_id)
-        sentiment = sentiment_detector.detect(user_message)
-        should_transfer, transfer_reason = await handoff_manager.should_transfer(
-            user_id=principal.subject,
-            message=user_message,
-            sentiment=sentiment,
+        ticket = await _prepare_handoff(
+            principal,
+            user_message,
+            source="stream",
+            idempotency_key=_validate_idempotency_key(request.headers.get("Idempotency-Key")),
         )
 
-        # 如果情绪负面或问题复杂，立即创建转接工单并返回 transfer 事件
-        if should_transfer:
-            ticket = await handoff_manager.create_transfer(
-                user_id=principal.subject,
-                reason=transfer_reason,
-                summary=f"用户说: {user_message[:100]}",
-                context={"sentiment": sentiment},
-            )
+        if ticket:
+            transfer_reason = ticket["handoff_reason"]
 
             async def transfer_stream():
                 yield format_sse(
@@ -508,7 +612,7 @@ async def chat_with_agent_stream(
                     {
                         "reason": transfer_reason,
                         "ticket_id": ticket["ticket_id"],
-                        "message": "正在为您转接人工客服，请稍候。",
+                        "message": "已为您转接人工客服，请稍候。",
                     },
                 )
                 yield format_sse("done", {"total_tokens": 0, "cost": 0, "latency_ms": 0})
@@ -521,7 +625,7 @@ async def chat_with_agent_stream(
             cached_reply = await cache.lookup(
                 user_message,
                 tenant_id=principal.tenant_id,
-                knowledge_version=settings.knowledge_version,
+                knowledge_version=_active_knowledge_version(),
             )
             if cached_reply:
                 logging.info("[API] 流式接口缓存命中 tenant=%s", principal.tenant_id)
@@ -560,7 +664,7 @@ async def chat_with_agent_stream(
                             reply=full_reply,
                             transferred=False,
                             tenant_id=principal.tenant_id,
-                            knowledge_version=settings.knowledge_version,
+                            knowledge_version=_active_knowledge_version(),
                         )
                 yield sse_event
 

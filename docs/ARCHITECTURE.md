@@ -21,7 +21,7 @@
 | Agent 框架 | DeepAgents + LangChain | 子智能体编排能力、中间件机制（Summarization / TodoList / Filesystem），通过 `CompiledSubAgent` 实现层级调用 |
 | 工具协议 | MCP (Model Context Protocol) | 标准化工具接口，通过 stdio 传输协议解耦 LLM 与数据源；支持 `langchain_mcp_adapters` 客户端自动发现工具 |
 | API 服务 | FastAPI | 高性能异步框架，原生 SSE 支持，自动生成 OpenAPI 文档，适合流式对话场景 |
-| 业务数据库 | SQLite (dev) -> PostgreSQL (prod) | 开发环境零配置即可启动；生产环境通过 SqlAlchemy 无缝迁移至 PostgreSQL |
+| 业务数据库 | PostgreSQL | 生产级事务存储，工单、退款和审计统一落库 |
 | 向量数据库 | Milvus | 持久化向量索引，支持混合检索策略（BM25 + 向量）；v2.4.x 版本稳定可靠 |
 | 缓存 | Redis Stack | 同时满足两类需求：(1) `AsyncRedisSaver` 基于 Redis 实现跨进程对话状态持久化 (2) Redis Stack 内置向量相似度搜索与 JSON 支持 |
 | 可观测 | Langfuse | LLM 原生 Trace 追踪，支持 token 用量统计、成本分析、实验对比；开源自建免外部依赖 |
@@ -101,7 +101,6 @@
 |---------|------|
 | `get_product_info` | 获取单个商品完整信息（名称、价格、库存、规格、品牌等） |
 | `search_products` | 按关键词/分类/最高价格搜索商品列表 |
-| `get_product_basic_info` | 获取商品基本信息和库存状态 |
 
 - 系统提示词定位于"购物顾问"，强调需求匹配而非参数罗列
 
@@ -194,7 +193,7 @@
 
 ### ADR-002: 混合检索而非纯向量检索
 
-**决策**：RAG 检索采用 BM25 + FAISS 混合策略 + Reranker 多路召回，而非单纯依赖向量相似度。
+**决策**：RAG 检索采用 Milvus 稠密向量 + BM25 稀疏向量混合策略，并通过 Reranker 完成精排，而非单纯依赖向量相似度。
 
 **理由**：
 

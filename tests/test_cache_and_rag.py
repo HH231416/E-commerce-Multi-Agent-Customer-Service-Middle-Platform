@@ -77,13 +77,40 @@ class RagFallbackTests(unittest.TestCase):
 
         fake_module.get_hybrid_retriever = lambda: BrokenRetriever()
 
-        with patch.dict(sys.modules, {"agents.rag_hybrid": fake_module}):
+        module_name = "agents.rag_hybrid"
+        previous_module = sys.modules.get(module_name)
+        sys.modules[module_name] = fake_module
+        try:
             if "agents.RAG_tool" in sys.modules:
                 del sys.modules["agents.RAG_tool"]
             rag_tool = importlib.import_module("agents.RAG_tool")
             reply = rag_tool.query_knowledge_base("退货规则")
+        finally:
+            if previous_module is None:
+                sys.modules.pop(module_name, None)
+            else:
+                sys.modules[module_name] = previous_module
 
         self.assertIn("知识库暂时不可用", reply)
+
+
+class RagDeduplicationTests(unittest.TestCase):
+    def test_deduplicate_uses_document_id_and_content_prefix(self):
+        from langchain_core.documents import Document
+        from agents.rag_hybrid import _deduplicate_documents
+
+        prefix = "相同的前缀" * 20
+        documents = [
+            Document(page_content=prefix + "BM25 结果", metadata={"document_id": "doc-a"}),
+            Document(page_content=prefix + "FAISS 结果", metadata={"document_id": "doc-a"}),
+            Document(page_content=prefix + "另一份文档", metadata={"document_id": "doc-b"}),
+        ]
+
+        result = _deduplicate_documents(documents)
+
+        self.assertEqual(2, len(result))
+        self.assertEqual(prefix + "BM25 结果", result[0].page_content)
+        self.assertEqual("doc-b", result[1].metadata["document_id"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,602 @@
+[
+  {
+    "category": "returns_policy",
+    "question": "七天无理由退货是怎么规定的？",
+    "expected_keywords": ["七天无理由退货", "七日内"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "returns_policy",
+    "question": "想退的，几天内随便退？",
+    "expected_keywords": ["7天内随便退"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "returns_policy",
+    "question": "退货的签收日期从什么时候开始算？",
+    "expected_keywords": ["次日零点"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "returns_policy",
+    "question": "退货的七天期限超了还能退吗？",
+    "expected_keywords": ["超时", "放弃无理由退货"],
+    "expected_source": "13_商品退货细则.txt"
+  },
+  {
+    "category": "returns_policy",
+    "question": "退货流程第一步要做什么？",
+    "expected_keywords": ["申请售后", "退货地址"],
+    "expected_source": "13_商品退货细则.txt"
+  },
+  {
+    "category": "returns_policy",
+    "question": "退货的包裹里要放一张什么纸条？",
+    "expected_keywords": ["订单号", "退货原因"],
+    "expected_source": "13_商品退货细则.txt"
+  },
+  {
+    "category": "warranty",
+    "question": "商品坏了多久内可以换新？",
+    "expected_keywords": ["15天内包换", "1年内保修"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "warranty",
+    "question": "保修期是多久？",
+    "expected_keywords": ["1年内保修"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "warranty",
+    "question": "换了之后多久能修好寄回来？",
+    "expected_keywords": ["7个工作日内", "维修"],
+    "expected_source": "09_换货与维修政策.md"
+  },
+  {
+    "category": "warranty",
+    "question": "配件（比如电池）保修多久？",
+    "expected_keywords": ["配件", "6个月"],
+    "expected_source": "16_商品售后时效一览.md"
+  },
+  {
+    "category": "warranty",
+    "question": "多次维修还是坏，可以换新吗？",
+    "expected_keywords": ["换新", "保修期"],
+    "expected_source": "16_商品售后时效一览.md"
+  },
+  {
+    "category": "shipping_time",
+    "question": "下单多久不发货有赔偿？",
+    "expected_keywords": ["48小时", "5%违约金"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "shipping_time",
+    "question": "大促期间发货会变慢吗？",
+    "expected_keywords": ["72小时", "发货时效"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "shipping_time",
+    "question": "新疆西藏的订单要等多久？",
+    "expected_keywords": ["5-8天", "偏远地区"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "shipping_time",
+    "question": "一线城市的配送要几天？",
+    "expected_keywords": ["1-3天", "北京"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "shipping_fee",
+    "question": "商品有质量问题退货，运费谁出？",
+    "expected_keywords": ["商品有质量问题", "商家承担"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "shipping_fee",
+    "question": "不喜欢想退货，运费谁掏？",
+    "expected_keywords": ["不喜欢", "用户承担"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "shipping_fee",
+    "question": "拒收快递的话运费怎么算？",
+    "expected_keywords": ["拒收", "双程运费"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "shipping_fee",
+    "question": "商家发错货了，退货运费算谁的？",
+    "expected_keywords": ["商家发错货", "商家承担"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "shipping_fee",
+    "question": "退货寄回去的运费谁先垫付？",
+    "expected_keywords": ["先行垫付", "结算"],
+    "expected_source": "13_商品退货细则.txt"
+  },
+  {
+    "category": "excluded_items",
+    "question": "内裤、文胸这种贴身衣物能退吗？",
+    "expected_keywords": ["贴身衣物", "内裤"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "excluded_items",
+    "question": "车厘子这种生鲜食品买了能退吗？",
+    "expected_keywords": ["生鲜", "车厘子"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "excluded_items",
+    "question": "游戏激活码这种虚拟商品能退货吗？",
+    "expected_keywords": ["虚拟商品", "激活码"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "excluded_items",
+    "question": "跨境商品支持无理由退货吗？",
+    "expected_keywords": ["跨境海外购", "无理由退货"],
+    "expected_source": "13_商品退货细则.txt"
+  },
+  {
+    "category": "consumables",
+    "question": "什么是耗材类商品？",
+    "expected_keywords": ["耗材类商品", "墨盒"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "consumables",
+    "question": "墨盒这种耗材坏了保修吗？",
+    "expected_keywords": ["耗材类商品", "不参与保修"],
+    "expected_source": "09_换货与维修政策.md"
+  },
+  {
+    "category": "liability",
+    "question": "手机摔了、进液了，算质量问题能退吗？",
+    "expected_keywords": ["使用不当", "进液"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "liability",
+    "question": "拆机刷机过的手机还在保修范围吗？",
+    "expected_keywords": ["拆机", "刷机"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "refund_time",
+    "question": "退款一般几天能到账？",
+    "expected_keywords": ["原路退回", "3-7个银行工作日"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "refund_time",
+    "question": "支付宝的退款要等多久？",
+    "expected_keywords": ["支付宝", "1-3个工作日"],
+    "expected_source": "11_退款与资金说明.md"
+  },
+  {
+    "category": "refund_time",
+    "question": "信用卡支付的退款多久到？",
+    "expected_keywords": ["信用卡", "银行工作日"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "refund_time",
+    "question": "退款审核通过后什么时候发起退款？",
+    "expected_keywords": ["24小时内", "发起退款"],
+    "expected_source": "11_退款与资金说明.md"
+  },
+  {
+    "category": "refund_time",
+    "question": "仓库验收之后多久能拿到退款？",
+    "expected_keywords": ["3个工作日内", "退款"],
+    "expected_source": "13_商品退货细则.txt"
+  },
+  {
+    "category": "refund_amount",
+    "question": "部分退款的时候优惠券和积分怎么算？",
+    "expected_keywords": ["积分", "按比例折算"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "refund_amount",
+    "question": "退款金额超过多少需要人工审核？",
+    "expected_keywords": ["1000元", "人工审核"],
+    "expected_source": "11_退款与资金说明.md"
+  },
+  {
+    "category": "refund_amount",
+    "question": "退款是按原路退回吗？",
+    "expected_keywords": ["原支付路径", "退回"],
+    "expected_source": "11_退款与资金说明.md"
+  },
+  {
+    "category": "coupon",
+    "question": "过期了的优惠券还会补发吗？",
+    "expected_keywords": ["优惠券已过期", "不予补发"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "coupon",
+    "question": "优惠券能转送给别人用吗？",
+    "expected_keywords": ["不可转赠", "优惠券"],
+    "expected_source": "05_优惠券与满减规则.md"
+  },
+  {
+    "category": "coupon",
+    "question": "一单能用几张优惠券？",
+    "expected_keywords": ["限用 1 张", "叠加"],
+    "expected_source": "05_优惠券与满减规则.md"
+  },
+  {
+    "category": "coupon",
+    "question": "新客优惠券满多少减多少？",
+    "expected_keywords": ["满 100 减 20"],
+    "expected_source": "05_优惠券与满减规则.md"
+  },
+  {
+    "category": "member",
+    "question": "消费多少才能成为金牌会员？",
+    "expected_keywords": ["满 8000 元", "金牌会员"],
+    "expected_source": "06_会员等级与积分体系.md"
+  },
+  {
+    "category": "member",
+    "question": "钻石会员能享受什么退换货权益？",
+    "expected_keywords": ["钻石会员", "免费退换货"],
+    "expected_source": "06_会员等级与积分体系.md"
+  },
+  {
+    "category": "member",
+    "question": "消费一块钱能积多少分？",
+    "expected_keywords": ["1 元累计 1 积分"],
+    "expected_source": "06_会员等级与积分体系.md"
+  },
+  {
+    "category": "member",
+    "question": "积分过期前会提醒吗？",
+    "expected_keywords": ["过期前", "推送提醒"],
+    "expected_source": "06_会员等级与积分体系.md"
+  },
+  {
+    "category": "invoice",
+    "question": "个人发票和企业专用发票税率一样吗？",
+    "expected_keywords": ["6%", "13%"],
+    "expected_source": "07_发票开具指南.md"
+  },
+  {
+    "category": "invoice",
+    "question": "电子发票多久能收到？",
+    "expected_keywords": ["24小时内", "电子发票"],
+    "expected_source": "07_发票开具指南.md"
+  },
+  {
+    "category": "invoice",
+    "question": "发票抬头填错了能改吗？",
+    "expected_keywords": ["作废重开"],
+    "expected_source": "07_发票开具指南.md"
+  },
+  {
+    "category": "invoice",
+    "question": "买了多久不申请发票就开不了了？",
+    "expected_keywords": ["6 个月", "放弃开票"],
+    "expected_source": "07_发票开具指南.md"
+  },
+  {
+    "category": "price_protect",
+    "question": "买完降价了能退差价吗？",
+    "expected_keywords": ["价格保护", "价保补差价"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "price_protect",
+    "question": "大促期间买的东西降价，多久内能申请价保？",
+    "expected_keywords": ["15 天内", "补差价"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "price_protect",
+    "question": "秒杀价可以申请价保吗？",
+    "expected_keywords": ["秒杀", "不参与价保"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "cross_border",
+    "question": "跨境直邮一般要多久能到？",
+    "expected_keywords": ["10-20 个工作日", "直邮"],
+    "expected_source": "10_跨境购物与关税说明.md"
+  },
+  {
+    "category": "cross_border",
+    "question": "跨境商品退货运费关税谁承担？",
+    "expected_keywords": ["国际段往返运费", "关税"],
+    "expected_source": "10_跨境购物与关税说明.md"
+  },
+  {
+    "category": "cross_border",
+    "question": "跨境商品需要实名认证吗？",
+    "expected_keywords": ["实名认证", "身份证"],
+    "expected_source": "10_跨境购物与关税说明.md"
+  },
+  {
+    "category": "order_cancel",
+    "question": "已经发货的订单能取消吗？",
+    "expected_keywords": ["已发货", "不可取消"],
+    "expected_source": "15_订单取消规则.md"
+  },
+  {
+    "category": "order_cancel",
+    "question": "待发货的订单怎么取消？",
+    "expected_keywords": ["待发货", "取消订单"],
+    "expected_source": "15_订单取消规则.md"
+  },
+  {
+    "category": "logistics",
+    "question": "快递丢了怎么办？",
+    "expected_keywords": ["丢件", "全额退款"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "logistics",
+    "question": "包裹破损了找谁处理？",
+    "expected_keywords": ["包裹破损", "24小时内"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "logistics",
+    "question": "物流三天没更新怎么处理？",
+    "expected_keywords": ["3 天无更新", "补发"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "payment",
+    "question": "下单支付失败扣了钱怎么办？",
+    "expected_keywords": ["重复扣款", "原路退回"],
+    "expected_source": "17_支付方式说明.md"
+  },
+  {
+    "category": "payment",
+    "question": "单笔订单支付上限是多少？",
+    "expected_keywords": ["50000 元"],
+    "expected_source": "17_支付方式说明.md"
+  },
+  {
+    "category": "payment",
+    "question": "支付失败后订单会保留多久？",
+    "expected_keywords": ["30 分钟", "自动关闭"],
+    "expected_source": "17_支付方式说明.md"
+  },
+  {
+    "category": "complaint",
+    "question": "什么情况必须转人工客服？",
+    "expected_keywords": ["情绪激动", "转人工"],
+    "expected_source": "12_投诉升级与转人工规范.md"
+  },
+  {
+    "category": "complaint",
+    "question": "二次投诉的处理时效是多久？",
+    "expected_keywords": ["2 小时内", "主管介入"],
+    "expected_source": "12_投诉升级与转人工规范.md"
+  },
+  {
+    "category": "complaint",
+    "question": "高额退款（超过1000元）怎么处理？",
+    "expected_keywords": ["1000元", "人工审核"],
+    "expected_source": "14_客服操作与审批规范.md"
+  },
+  {
+    "category": "risk_control",
+    "question": "一个月退好多单的用户要怎么处理？",
+    "expected_keywords": ["退货超过 5 单", "视频拆包"],
+    "expected_source": "14_客服操作与审批规范.md"
+  },
+  {
+    "category": "risk_control",
+    "question": "什么情况下禁止用极速退款？",
+    "expected_keywords": ["极速退款", "严禁"],
+    "expected_source": "14_客服操作与审批规范.md"
+  },
+  {
+    "category": "risk_control",
+    "question": "发现商品被调包了怎么办？",
+    "expected_keywords": ["调包", "封禁账号"],
+    "expected_source": "14_客服操作与审批规范.md"
+  },
+  {
+    "category": "risk_control",
+    "question": "客服的审计日志保留多久？",
+    "expected_keywords": ["审计日志", "保留 3 年"],
+    "expected_source": "14_客服操作与审批规范.md"
+  },
+  {
+    "category": "escalation",
+    "question": "用户情绪很激动，客服可以怎么安抚？",
+    "expected_keywords": ["情绪激动", "20元"],
+    "expected_source": "03_客服内部执行手册_SOP.docx"
+  },
+  {
+    "category": "escalation",
+    "question": "已经过了7天想退货，银牌会员可以特殊处理吗？",
+    "expected_keywords": ["例外退货", "银牌"],
+    "expected_source": "03_客服内部执行手册_SOP.docx"
+  },
+  {
+    "category": "escalation",
+    "question": "拆封过的数码产品能不能折旧退货？",
+    "expected_keywords": ["折旧退货", "15%"],
+    "expected_source": "03_客服内部执行手册_SOP.docx"
+  },
+  {
+    "category": "promo",
+    "question": "大促期间仅退款的等待期有变化吗？",
+    "expected_keywords": ["仅退款", "7天"],
+    "expected_source": "03_客服内部执行手册_SOP.docx"
+  },
+  {
+    "category": "promo",
+    "question": "双11、618一般是什么时候？",
+    "expected_keywords": ["双11", "618"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "after_sales_timeline",
+    "question": "质量问题换货是签收后多久内？",
+    "expected_keywords": ["15 日内", "换货"],
+    "expected_source": "16_商品售后时效一览.md"
+  },
+  {
+    "category": "after_sales_timeline",
+    "question": "售后的各种时效从哪天起算？",
+    "expected_keywords": ["签收次日零点", "起算"],
+    "expected_source": "16_商品售后时效一览.md"
+  },
+  {
+    "category": "returns_policy",
+    "question": "七天无理由退货要求商品保持什么状态？",
+    "expected_keywords": ["商品完好", "不影响二次销售"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "returns_policy",
+    "question": "签收和代收的七天起算时间有区别吗？",
+    "expected_keywords": ["次日零点", "代收"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "warranty",
+    "question": "主机类商品保修几年，需要什么凭证？",
+    "expected_keywords": ["保修 1 年", "购机凭证"],
+    "expected_source": "09_换货与维修政策.md"
+  },
+  {
+    "category": "shipping_time",
+    "question": "预售商品什么时候发货？",
+    "expected_keywords": ["预售商品", "页面承诺时间"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "shipping_time",
+    "question": "发货超时赔付的违约金有上限吗？",
+    "expected_keywords": ["最高赔付 50 元", "违约金"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "shipping_fee",
+    "question": "拍错尺码想退货，运费谁出？",
+    "expected_keywords": ["拍错", "用户承担"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "excluded_items",
+    "question": "保暖内衣算贴身衣物、不能退吗？",
+    "expected_keywords": ["保暖内衣", "贴身衣物"],
+    "expected_source": "02_用户帮助中心_常见问题.md"
+  },
+  {
+    "category": "consumables",
+    "question": "护肤品试用装算不算耗材类商品？",
+    "expected_keywords": ["护肤品试用装", "耗材类商品"],
+    "expected_source": "01_平台售后服务协议_法务版.txt"
+  },
+  {
+    "category": "liability",
+    "question": "人为摔坏的手机在保修范围吗？",
+    "expected_keywords": ["摔落", "不在保修范围"],
+    "expected_source": "09_换货与维修政策.md"
+  },
+  {
+    "category": "refund_time",
+    "question": "微信支付的退款多久到账？",
+    "expected_keywords": ["微信支付", "1-3 个工作日"],
+    "expected_source": "11_退款与资金说明.md"
+  },
+  {
+    "category": "refund_amount",
+    "question": "非质量问题退货的运费会从退款里扣吗？",
+    "expected_keywords": ["非质量问题", "从退款中扣除"],
+    "expected_source": "11_退款与资金说明.md"
+  },
+  {
+    "category": "coupon",
+    "question": "品类券的满减门槛是多少？",
+    "expected_keywords": ["满 200 减 30", "品类券"],
+    "expected_source": "05_优惠券与满减规则.md"
+  },
+  {
+    "category": "member",
+    "question": "银牌会员有哪些专属权益？",
+    "expected_keywords": ["银牌会员", "生日双倍积分"],
+    "expected_source": "06_会员等级与积分体系.md"
+  },
+  {
+    "category": "member",
+    "question": "退款订单产生的积分怎么处理？",
+    "expected_keywords": ["退款订单产生的积分", "退回或扣减"],
+    "expected_source": "06_会员等级与积分体系.md"
+  },
+  {
+    "category": "invoice",
+    "question": "纸质发票要多久寄出？",
+    "expected_keywords": ["纸质发票", "7 个工作日内"],
+    "expected_source": "07_发票开具指南.md"
+  },
+  {
+    "category": "price_protect",
+    "question": "价保审核通过后差价怎么退？",
+    "expected_keywords": ["申请价保", "差价原路退回"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "cross_border",
+    "question": "保税仓发货一般多少天能到？",
+    "expected_keywords": ["保税仓发货", "5-10 个工作日"],
+    "expected_source": "10_跨境购物与关税说明.md"
+  },
+  {
+    "category": "order_cancel",
+    "question": "待付款订单怎么关闭？",
+    "expected_keywords": ["待付款", "关闭订单"],
+    "expected_source": "15_订单取消规则.md"
+  },
+  {
+    "category": "logistics",
+    "question": "物流投诉后客服多久响应？",
+    "expected_keywords": ["物流投诉", "2 小时内"],
+    "expected_source": "04_物流配送时效说明.md"
+  },
+  {
+    "category": "payment",
+    "question": "花呗付款的订单退款按什么方式退回？",
+    "expected_keywords": ["花呗", "原支付方式退回"],
+    "expected_source": "17_支付方式说明.md"
+  },
+  {
+    "category": "complaint",
+    "question": "普通投诉的处理时效是多久？",
+    "expected_keywords": ["普通投诉", "24 小时内响应"],
+    "expected_source": "12_投诉升级与转人工规范.md"
+  },
+  {
+    "category": "risk_control",
+    "question": "高风险用户退货要先做什么？",
+    "expected_keywords": ["先寄回", "视频拆包"],
+    "expected_source": "14_客服操作与审批规范.md"
+  },
+  {
+    "category": "promo",
+    "question": "大促期间的发货时效变成多久？",
+    "expected_keywords": ["72 小时", "发货时效"],
+    "expected_source": "08_大促活动与价格保护.md"
+  },
+  {
+    "category": "after_sales_timeline",
+    "question": "因为平台原因导致超时怎么办？",
+    "expected_keywords": ["时效顺延", "平台原因"],
+    "expected_source": "16_商品售后时效一览.md"
+  }
+]

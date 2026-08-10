@@ -103,7 +103,6 @@ async def stream_agent_response(
                     "create_refund_draft": "正在核验退款条件...",
                     "get_product_info": "正在查询商品信息...",
                     "search_products": "正在搜索商品...",
-                    "get_product_basic_info": "正在查询商品基本信息...",
                     "get_policy": "正在检索相关政策...",
                     "query_knowledge_base": "正在从知识库检索信息...",
                 }

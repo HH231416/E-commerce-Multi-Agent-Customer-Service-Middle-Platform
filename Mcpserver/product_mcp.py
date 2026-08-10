@@ -97,26 +97,40 @@ def _search_products(keyword: str = None, category: str = None, max_price: float
         conn.close()  # 确保连接关闭
 
 
+def _stock_status(stock: int) -> str:
+    """根据库存数量返回人性化的库存状态描述（内部辅助函数）。"""
+    if stock > 50:
+        return "库存充足"
+    elif stock > 10:
+        return "库存正常"
+    elif stock > 0:
+        return "库存紧张"
+    else:
+        return "缺货"
+
+
 @mcp.tool()  # 注册为 MCP 工具，LLM 可直接调用
-def get_product_info(product_description: str) -> str:
+def get_product_info(product_description: str, detail_level: str = "full") -> str:
     """
     根据商品描述或名称获取**单个**商品的详细信息。
-    
+
     **注意**：
     - 仅适用于查询**具体**的某个商品（如"夏科有线键鼠套装"）。
     - 如果用户想要搜索**一类**商品（如"电脑外设"、"洗衣机"）或没有具体商品名，**请勿使用此工具**，应使用 `search_products` 工具。
-    
+
     Args:
         product_description: 具体的商品名称或描述，例如："夏科有线键鼠套装"、"M20洗衣机"等
-    
+        detail_level: 详细程度。"full"（默认）返回完整信息包括规格/品牌/描述/图片；
+                      "basic" 仅返回价格和库存状态，适用于用户只关心"多少钱""有没有货"的场景
+
     Returns:
-        商品详情的字符串描述，包括名称、价格、库存、规格等
+        商品详情的字符串描述
     """
-    logging.info("MCP 调用 get_product_info")
-    
+    logging.info("MCP 调用 get_product_info detail_level=%s", detail_level)
+
     # 先尝试精确匹配商品名称（优先精确查询，性能更好）
     record = _fetch_product(product_name=product_description)
-    
+
     if record is None:  # 精确匹配失败
         # 降级为模糊搜索（兼容用户输入的描述而非精确名称）
         results = _search_products(keyword=product_description)
@@ -125,22 +139,38 @@ def get_product_info(product_description: str) -> str:
         # 返回第一个匹配结果（模糊搜索可能有多个结果）
         record = results[0]
         # 调整字段顺序以匹配 _fetch_product 的返回格式（_search_products 少 created_at 和 updated_at）
-        record = (record[0], record[1], record[2], record[3], record[4], record[5], 
+        record = (record[0], record[1], record[2], record[3], record[4], record[5],
                  record[6], record[7], record[8], record[9], None, None)  # None 填充缺失字段
-    
+
     # 解包元组到命名变量（提高可读性）
     (product_id, product_name, description, category, price, stock,
      brand, specifications, image_url, status, created_at, updated_at) = record
-    
-    # 组装返回文本（逐行拼接，LLM 能更好地理解结构化信息）
+
+    # 检查商品状态：非在售商品不应推荐给用户
+    if status != "在售":
+        return f"商品「{product_name}」当前状态：{status}，暂不可购买。"
+
+    # basic 模式：只返回价格和库存状态
+    if detail_level == "basic":
+        result = (
+            f"商品：{product_name}\n"
+            f"价格：{price} 元\n"
+            f"当前库存：{stock} 件\n"
+            f"库存状态：{_stock_status(stock)}"
+        )
+        if stock == 0:  # 缺货时给出建议
+            result += "\n提示：该商品目前缺货，建议选择其他商品或稍后再试。"
+        return result
+
+    # full 模式：返回完整信息
     result = (
         f"商品ID：{product_id}\n"
         f"商品名称：{product_name}\n"
         f"分类：{category}\n"
         f"价格：{price} 元\n"
-        f"库存：{stock} 件\n"
+        f"库存：{stock} 件（{_stock_status(stock)}）\n"
     )
-    
+
     # 可选字段：存在时才添加（避免显示空值）
     if brand:
         result += f"品牌：{brand}\n"
@@ -150,9 +180,12 @@ def get_product_info(product_description: str) -> str:
         result += f"规格参数：{specifications}\n"
     if image_url:
         result += f"商品图片：{image_url}\n"
-    
+
+    if stock == 0:
+        result += "提示：该商品目前缺货，建议选择其他商品或稍后再试。\n"
+
     result += f"状态：{status}"  # 商品状态（在售/下架等）
-    
+
     return result  # 返回格式化后的商品信息
 
 
@@ -200,54 +233,6 @@ def search_products(keyword: str = None, category: str = None, max_price: float 
     
     return result
 
-
-@mcp.tool()  # 注册为 MCP 工具
-def get_product_basic_info(product_name: str) -> str:
-    """
-    获取**单个**指定商品的基本信息（价格和库存）。
-    
-    **注意**：
-    - 仅适用于查询**具体**的某个商品。
-    - 如果用户想要搜索**一类**商品或进行模糊搜索，**请勿使用此工具**，应使用 `search_products` 工具。
-    
-    Args:
-        product_name: 具体的商品名称，例如："夏科有线键鼠套装"、"M20洗衣机"等
-    
-    Returns:
-        商品的基本信息，包括价格和库存状态
-    """
-    logging.info("MCP 调用 get_product_basic_info")
-    
-    record = _fetch_product(product_name=product_name)  # 查询商品
-    if record is None:  # 未找到
-        return f"未找到商品「{product_name}」，请检查商品名称是否正确。"
-    
-    # 解包元组，用 _ 忽略不需要的字段
-    product_id, product_name_db, _, category, price, stock, brand, _, _, status, _, _ = record
-    
-    # 检查商品状态：非在售商品不应推荐给用户
-    if status != "在售":
-        return f"商品「{product_name_db}」当前状态：{status}，暂不可购买。"
-    
-    # 根据库存数量确定库存状态（给用户直观感受而非冰冷数字）
-    if stock > 50:
-        stock_status = "库存充足"  # 大量库存
-    elif stock > 10:
-        stock_status = "库存正常"  # 正常库存
-    elif stock > 0:
-        stock_status = "库存紧张"  # 快卖完了，促进下单
-    else:
-        stock_status = "缺货"  # 售罄
-    
-    result = f"商品：{product_name_db}\n"
-    result += f"价格：{price} 元\n"
-    result += f"当前库存：{stock} 件\n"
-    result += f"库存状态：{stock_status}\n"
-    
-    if stock == 0:  # 缺货时给出建议
-        result += "提示：该商品目前缺货，建议选择其他商品或稍后再试。"
-    
-    return result
 
 if __name__ == "__main__":
     # 独立运行 MCP Server（通过 stdio 与 Agent 通信）

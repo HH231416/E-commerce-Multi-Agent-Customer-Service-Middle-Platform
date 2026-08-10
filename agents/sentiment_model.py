@@ -8,6 +8,7 @@
 - 局限性：规则匹配无法理解反讽、上下文情绪变化，但作为前置过滤器足够
 """
 import re  # 正则表达式，用于复杂情感模式匹配
+from typing import Any, Dict
 
 class SentimentDetector:
     """
@@ -41,6 +42,15 @@ class SentimentDetector:
         r"(每次.*都)",  # "每次都这样"
     ]
 
+    # Sentiment alone is not a reliable proxy for business risk.
+    RISK_KEYWORDS = {
+        "payment": ("支付失败", "扣款", "重复扣款", "银行卡", "付款"),
+        "refund": ("退款", "退钱", "赔付", "理赔"),
+        "complaint": ("投诉", "举报", "曝光", "消协", "平台介入"),
+        "privacy": ("隐私", "泄露", "身份证", "手机号"),
+        "logistics": ("丢件", "损坏", "没收到", "物流异常"),
+    }
+
     def detect(self, text: str) -> str:
         """
         检测用户消息的情感状态。
@@ -65,6 +75,27 @@ class SentimentDetector:
         if angry_count >= 1 or frustrated_count >= 2:  # 受挫阈值
             return "frustrated"
         return "normal"  # 正常
+
+    def analyze(self, text: str) -> Dict[str, Any]:
+        """Return routing metadata without an additional LLM call."""
+        normalized = text or ""
+        angry_count = sum(1 for kw in self.ANGRY_KEYWORDS if kw in normalized)
+        frustrated_count = sum(1 for kw in self.FRUSTRATED_KEYWORDS if kw in normalized)
+        pattern_count = sum(1 for pattern in self.FRUSTRATED_PATTERNS if re.search(pattern, normalized))
+        risk_tags = [tag for tag, words in self.RISK_KEYWORDS.items() if any(word in normalized for word in words)]
+        sentiment = self.detect(normalized)
+        score = min(1.0, angry_count * 0.25 + (frustrated_count + pattern_count) * 0.12)
+        if sentiment == "angry":
+            score = max(score, 0.85)
+        elif sentiment == "frustrated":
+            score = max(score, 0.5)
+        return {
+            "sentiment": sentiment,
+            "score": round(score, 3),
+            "intensity": "high" if score >= 0.8 else "medium" if score >= 0.4 else "low",
+            "confidence": "high" if angry_count + frustrated_count + pattern_count > 0 else "medium",
+            "risk_tags": risk_tags,
+        }
 
     def should_escalate(self, sentiment: str, consecutive_failures: int = 0) -> bool:
         """

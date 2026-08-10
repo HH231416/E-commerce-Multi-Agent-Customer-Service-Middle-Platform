@@ -31,10 +31,10 @@ BASE_URL = os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compa
 # - 主模型（对话）需要较高 temperature 保证回答自然
 # - 如果全用一个模型，无法针对不同任务调优，且可能浪费 Token（路由不需要 1024 max_tokens）
 # ============================================================
-LLM_MODEL = os.getenv("LLM_MODEL", "qwen-plus")  # 主对话模型，用于生成最终回复
-ROUTING_MODEL = os.getenv("ROUTING_MODEL", "qwen-plus")  # 意图路由模型，用于分类和分发
-MIDDLEWARE_MODEL = os.getenv("MIDDLEWARE_MODEL", "qwen-turbo")  # 中间件模型，用于摘要等轻量任务（更便宜）
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-v3")  # 向量化模型，用于 RAG 和缓存
+LLM_MODEL = os.getenv("LLM_MODEL", "qwen3.7-plus")  # 主对话模型，用于生成最终回复
+ROUTING_MODEL = os.getenv("ROUTING_MODEL", "qwen3.7-flash")  # 意图路由模型，用于分类和分发
+MIDDLEWARE_MODEL = os.getenv("MIDDLEWARE_MODEL", "qwen3.7-max-2026-05-20")  # 中间件模型，用于摘要等轻量任务（更便宜）
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "qwen3.7-text-embedding")  # 向量化模型，用于 RAG 和缓存
 
 # ============================================================
 # 模型实例缓存（避免重复创建相同的模型对象）
