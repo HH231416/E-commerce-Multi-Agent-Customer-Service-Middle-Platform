@@ -70,6 +70,8 @@ def get_model(model_name: str = None):
             temperature=0.7,  # 主模型温度较高，保证回答多样性
             timeout=300,  # 5 分钟超时，处理复杂多步推理
             max_tokens=1024,  # 限制单次生成长度，控制成本
+            # 流式返回末尾带上 usage，否则统计里 Token 用量恒为 0
+            stream_usage=True,
         )
     return _cached_models[cache_key]  # 返回已缓存的实例
 

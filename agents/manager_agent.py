@@ -22,7 +22,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
-from model import get_model
+from model import get_model, get_routing_model
 from RAG_tool import query_knowledge_base
 
 # ---------------------------------------------------------------------------
@@ -89,8 +89,12 @@ PLAN_PROMPT = """你是一个电商客服调度员。分析用户消息，判断
 1. 如果用户只是问候/感谢/简单闲聊，设置 is_chat=true 并提供 chat_reply，tasks 留空
 2. 为每个涉及的业务领域创建一个 task，query 应重写为适合该领域 Agent 理解的完整问题
 3. 如果同一消息涉及多个领域（如"我的订单到哪了？有什么优惠券？"），创建多个 task
-4. 优先使用关键词匹配判断领域归属，不要遗漏用户提到的任何领域
+4. 优先使用关键词匹配判断领域归属，不要遗漏用户明确表达的诉求
 5. 输出严格 JSON 格式
+6. 领域按用户的核心诉求判定：消息里出现订单号不构成追加 order 的理由
+7. 物流类问题（轨迹、时效、签收、派送、快递公司）只派 logistics；只有同时要求取消或退款才追加 order
+8. 规则解释类问题（售后政策、保修、发票、价保、积分）只派 policy；只有同时要求查询具体订单或物流状态才追加 order/logistics
+9. 拿不准时只保留最核心的领域，不要堆砌领域
 
 用户消息: {user_message}"""
 
@@ -104,7 +108,9 @@ async def _plan_node(state: ManagerState, config: RunnableConfig) -> dict:
     last_msg = messages[-1]
     user_text = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
 
-    model = get_model()
+    # 路由用低温度模型：temperature=0.7 会让同一句话两次拆出不同的计划，
+    # 直接影响路由稳定性与准确率（model.py 中 ROUTING_MODEL 专为此设计）
+    model = get_routing_model()
     try:
         structured_model = model.with_structured_output(IntentPlan)
         plan: IntentPlan = await structured_model.ainvoke(

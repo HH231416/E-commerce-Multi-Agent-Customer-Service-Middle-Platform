@@ -1,512 +1,145 @@
 # API 接口文档
 
-## 基本信息
+## 1. 基本约定
 
-- **Base URL**：`http://localhost:8000`
-- **Content-Type**：`application/json`
-- **编码**：`UTF-8`
-- **交互式文档**：启动服务后访问 `http://localhost:8000/docs`（Swagger UI）
-- **前端页面**：启动服务后访问 `http://localhost:8000/html/index.html`
+- Base URL：`http://localhost:8000`
+- Content-Type：`application/json`；流式对话使用 `text/event-stream`
+- 交互式文档：`/docs`
+- 除健康检查和根路径外，接口在生产环境均应携带 `Authorization: Bearer <JWT>`。
 
----
+JWT 是可信身份来源，包含租户、主体和角色。路径中的 `{user_id}` 仅用于校验其是否与令牌主体一致；它不是身份切换参数，不能用于读取其他用户的会话或订单。
 
-## 接口概览
+## 2. 接口概览
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| `GET`  | `/` | 根路径，返回 API 基本信息 |
-| `GET`  | `/api/health` | 健康检查 |
-| `POST` | `/api/chat/{user_id}` | 传统一次性对话（非流式） |
-| `POST` | `/api/chat/{user_id}/stream` | SSE 流式对话（推荐） |
-| `GET`  | `/api/chat_history/{user_id}` | 获取用户对话历史 |
-| `POST` | `/api/init_chat/{user_id}` | 初始化新对话 |
-| `GET`  | `/api/feedback/{user_id}` | 用户反馈收集 |
+| 方法 | 路径 | 权限/用途 |
+|---|---|---|
+| GET | `/` | 服务信息 |
+| GET | `/api/health` | 健康检查 |
+| POST | `/api/auth/session` | 用 Bearer 令牌换取 HttpOnly 会话 Cookie |
+| DELETE | `/api/auth/session` | 清除会话 Cookie |
+| GET | `/api/cache/stats` | `support`/`admin` 查看缓存统计 |
+| GET | `/metrics` | `admin` 查看 Prometheus 指标 |
+| POST | `/api/chat/{user_id}` | 认证用户的非流式对话 |
+| POST | `/api/chat/{user_id}/stream` | 认证用户的 SSE 流式对话 |
+| GET | `/api/chat_history/{user_id}` | 获取自己的会话历史 |
+| POST | `/api/init_chat/{user_id}` | 初始化自己的会话 |
+| GET | `/api/feedback/{user_id}` | 提交自己的 1–5 分反馈 |
+| GET | `/api/transfer/tickets` | `support`/`admin` 查询本租户工单 |
+| GET | `/api/transfer/tickets/{ticket_id}` | `support`/`admin` 查询本租户工单 |
+| POST | `/api/transfer/tickets/{ticket_id}/assign` | `support`/`admin` 指派自己处理工单 |
+| POST | `/api/transfer/tickets/{ticket_id}/resolve` | `support`/`admin` 解决工单 |
+| GET | `/api/transfer/queue` | `support`/`admin` 查看本租户队列 |
+| POST | `/api/orders/{order_no}/refund/confirm` | 认证用户确认退款 |
 
----
+### 鉴权来源与浏览器会话
 
-## 接口详情
+服务端按以下顺序解析身份：非生产环境的调试身份头 → `Authorization: Bearer` → HttpOnly 会话 Cookie。
 
-### GET /
+浏览器端推荐流程：登录时调用 `POST /api/auth/session` 携带 Bearer 令牌，服务端校验签发方与受众后下发 `cs_session` Cookie（`HttpOnly`、`SameSite=Lax`、生产环境带 `Secure`），前端随即丢弃令牌。此后由浏览器自动携带 Cookie。
 
-根路径，用于确认服务运行状态。
+使用 Cookie 鉴权的写请求（非 GET/HEAD/OPTIONS）会校验 `Origin` 与 `Host` 是否一致，不一致返回 403；非浏览器客户端通常不带 `Origin`，不受此限制。会话 Cookie 的 `Max-Age` 取自令牌 `exp`。
 
-**响应示例**：
+## 3. 对话接口
+
+### POST `/api/chat/{user_id}`
+
+非流式对话。请求在 Gateway 完成身份、租户和会话校验后，交由 Manager 生成并校验任务计划；领域查询通过 MCP 工具执行，政策问答走当前知识版本的混合检索。
+
+请求：
+
+```http
+Authorization: Bearer <JWT>
+Idempotency-Key: optional-request-key
+Content-Type: application/json
+
+{"message":"订单 A1001 到哪里了？如果今天不到能退款吗？"}
+```
+
+`Idempotency-Key` 适用于客户端重试，同一用户和租户下应保持唯一。请求体中的 `message` 为必填，长度受服务端限制。
+
+响应至少包含回答和角色；服务端可返回延迟等非敏感统计信息。业务事实以 MCP 返回为准，政策回答应附带来源与知识版本；关键事实不足或高风险操作未确认时，系统会追问、拒答或转人工。
 
 ```json
 {
-  "message": "电商多智能体智能客服平台 API",
-  "docs": "/docs"
+  "response": "已查询到订单的最新状态……",
+  "role": "assistant",
+  "latency_ms": 1234
 }
 ```
 
----
+### POST `/api/chat/{user_id}/stream`
 
-### GET /api/health
+SSE 流式对话。鉴权与 `{user_id}` 一致性校验规则同非流式接口。支持的核心事件：
 
-健康检查接口，供负载均衡器或监控系统使用。
+| 事件 | 数据 | 说明 |
+|---|---|---|
+| `thinking` | `step` | 仅展示安全的处理进度，不泄露内部 Prompt 或敏感参数 |
+| `token` | `content` | 回复增量文本 |
+| `transfer` | `reason`、`ticket_id`、`message` | 系统已创建或复用人工工单 |
+| `done` | `total_tokens`、`cost`、`latency_ms`、可选 `cached` | 请求完成统计 |
+| `error` | `message` | 可展示的失败原因 |
 
-**响应示例**：
+工具调用参数、用户身份、订单号和其他敏感信息不应直接作为 SSE 事件输出。若命中隔离后的稳定 FAQ 缓存，响应可带 `cached: true`；订单、物流、价格、库存和退款状态不使用普通语义缓存。
+
+## 4. 会话与反馈
+
+### GET `/api/chat_history/{user_id}`
+
+返回当前认证主体在当前租户下的会话历史。系统消息和工具消息会被过滤；未初始化或没有会话时返回空数组。
 
 ```json
+{"history":[{"role":"user","content":"我的订单怎么还没到？"},{"role":"assistant","content":"请提供订单号。"}]}
+```
+
+### POST `/api/init_chat/{user_id}`
+
+幂等地初始化当前用户会话。已有历史时直接返回，不应重复写入示例消息。
+
+### GET `/api/feedback/{user_id}?score=1`
+
+记录当前用户的 1–5 分反馈，并关联当前 Prompt 版本以便评估。评分不在范围内返回 `422`。
+
+## 5. 人工工单接口
+
+当用户显式要求人工、出现高风险问题或负面情绪达到阈值时，Gateway 创建或复用工单。工单查询和处理都按 `tenant_id` 隔离，且要求 `support` 或 `admin` 角色。
+
+- `GET /api/transfer/tickets`：可按状态查询本租户工单及待处理数量。
+- `GET /api/transfer/tickets/{ticket_id}`：获取单个本租户工单。
+- `POST /api/transfer/tickets/{ticket_id}/assign`：请求体 `{"agent_id":"当前认证客服"}`，只能把工单指派给自己。
+- `POST /api/transfer/tickets/{ticket_id}/resolve`：请求体包含当前客服 `agent_id` 与 `resolution_note`。
+- `GET /api/transfer/queue`：获取本租户待处理队列。
+
+## 6. 退款确认接口
+
+### POST `/api/orders/{order_no}/refund/confirm`
+
+此接口只能在系统已生成退款草案、用户明确确认后调用。接口不是“模型调用退款”的捷径：服务端仍会校验认证主体、租户、订单归属、订单状态、确认令牌/草案和幂等键，并写入审计事件。
+
+请求示例：
+
+```http
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
 {
-  "status": "healthy"
+  "idempotency_key":"refund_20260110_abc123",
+  "reason":"商品未按约定时间送达"
 }
 ```
 
-**状态码**：
-
-| 状态码 | 说明 |
-|--------|------|
-| 200 | 服务正常 |
-
----
-
-### POST /api/chat/{user_id} — 传统一次性返回
-
-向 AI 客服发送消息并获取完整回复。此接口等待 Agent 完成全部处理（包括子智能体调用、MCP 工具执行、RAG 检索）后一次性返回结果。
-
-**路径参数**：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `user_id` | string | 用户唯一标识，同时作为 `thread_id` 用于 Redis 状态持久化 |
-
-**请求体**：
-
-```json
-{
-  "message": "查询订单A1001的状态"
-}
-```
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `message` | string | 是 | 用户输入的消息内容 |
-
-**成功响应**：
-
-```json
-{
-  "response": "您的订单 A1001 当前状态为：待发货。包含商品：路由器 x1、网线 x2，支付金额：598.00 元。",
-  "role": "assistant"
-}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `response` | string | AI 客服的回复内容 |
-| `role` | string | 固定为 `"assistant"` |
-
-**错误响应**：
-
-| 状态码 | detail | 说明 |
-|--------|--------|------|
-| 400 | `"消息内容不能为空"` | 请求体中缺少 `message` 字段或为空 |
-| 500 | `"对话失败: ..."` | Agent 处理异常（含 traceback） |
-| 503 | `"Agent is not initialized yet."` | 服务启动未完成，Agent 尚未就绪 |
-
-**注意事项**：
-
-- 对话历史由 `AsyncRedisSaver` 自动管理，同一 `user_id` 的请求会延续之前的上下文
-- 若上次请求因崩溃留下未完成的工具调用，系统会自动注入修复消息恢复状态闭环
-- 此接口为阻塞式调用，处理时间取决于 LLM 响应速度与子智能体调用次数（通常 3-15 秒）
-
----
-
-### POST /api/chat/{user_id}/stream — SSE 流式返回（推荐）
-
-与 AI 客服进行流式对话，通过 Server-Sent Events (SSE) 实时推送处理进度。相比传统接口，用户可感知系统正在处理的各个阶段。
-
-**路径参数**：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `user_id` | string | 用户唯一标识，同时作为 `thread_id` 用于 Redis 状态持久化 |
-
-**请求体**：
-
-```json
-{
-  "message": "帮我查一下夏科键盘的价格"
-}
-```
-
-**响应格式**：`text/event-stream` (SSE)
-
-**SSE 事件类型**：
-
-#### `event: thinking`
-
-系统正在执行的思考步骤，用于向用户展示处理进度。
-
-```
-event: thinking
-data: {"step": "正在理解您的问题..."}
-```
-
-```
-event: thinking
-data: {"step": "识别为商品查询，正在为您搜索..."}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `step` | string | 当前处理步骤的描述文字 |
-
-#### `event: tool_start`
-
-工具调用开始，用于展示系统正在调用哪个后端服务。
-
-```
-event: tool_start
-data: {"tool": "get_product_info", "args": {"product_description": "夏科键盘"}}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `tool` | string | 被调用的工具名称 |
-| `args` | object | 传递给工具的参数（已隐藏敏感字段如 user_id） |
-
-#### `event: tool_end`
-
-工具调用完成，附带结果摘要。
-
-```
-event: tool_end
-data: {"tool": "get_product_info", "summary": "已找到商品：夏科有线键鼠套装，价格50.00元，库存充足"}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `tool` | string | 工具名称 |
-| `summary` | string | 工具执行结果的简短摘要 |
-
-#### `event: token`
-
-流式输出的文本片段，用于在前端逐字展示 AI 回复。
-
-```
-event: token
-data: {"content": "夏科"}
-```
-
-```
-event: token
-data: {"content": "有线键鼠"}
-```
-
-```
-event: token
-data: {"content": "套装"}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `content` | string | 增量文本内容，前端应累积展示 |
-
-#### `event: transfer`
-
-当系统判断需要转人工客服时触发。
-
-```
-event: transfer
-data: {"reason": "用户情绪不稳定且问题超出自动处理范围", "ticket_id": "TKT-20240601-001", "message": "正在为您转接人工客服，请稍候..."}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `reason` | string | 转人工的原因说明 |
-| `ticket_id` | string | 生成的人工工单编号 |
-| `message` | string | 展示给用户的提示信息 |
-
-#### `event: done`
-
-对话完成，包含本次对话的统计信息。
-
-```
-event: done
-data: {"total_tokens": 1247, "cost": 0.0032, "latency_ms": 4230}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `total_tokens` | integer | 本次对话消耗的总 token 数 |
-| `cost` | float | 本次对话的费用（美元） |
-| `latency_ms` | integer | 端到端延迟（毫秒） |
-
-#### `event: error`
-
-处理过程中发生错误。
-
-```
-event: error
-data: {"message": "订单查询超时，请稍后重试"}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `message` | string | 错误描述信息 |
-
-#### SSE 流完整示例
-
-```
-event: thinking
-data: {"step": "正在理解您的问题..."}
-
-event: thinking
-data: {"step": "已识别为商品查询请求"}
-
-event: tool_start
-data: {"tool": "get_product_info", "args": {"product_description": "夏科键盘"}}
-
-event: tool_end
-data: {"tool": "get_product_info", "summary": "已找到商品：夏科有线键鼠套装"}
-
-event: token
-data: {"content": "夏科"}
-
-event: token
-data: {"content": "有线键鼠套装"}
-
-event: token
-data: {"content": "目前售价"}
-
-event: token
-data: {"content": "50.00"}
-
-event: token
-data: {"content": "元"}
-
-event: done
-data: {"total_tokens": 856, "cost": 0.0012, "latency_ms": 3120}
-```
-
-**客户端实现参考（JavaScript）**：
-
-```javascript
-const eventSource = new EventSource('/api/chat/user123/stream');
-
-eventSource.addEventListener('thinking', (e) => {
-  const data = JSON.parse(e.data);
-  showProgress(data.step);
-});
-
-eventSource.addEventListener('tool_start', (e) => {
-  const data = JSON.parse(e.data);
-  showToolCall(data.tool);
-});
-
-eventSource.addEventListener('tool_end', (e) => {
-  const data = JSON.parse(e.data);
-  hideToolCall(data.tool);
-});
-
-eventSource.addEventListener('token', (e) => {
-  const data = JSON.parse(e.data);
-  appendText(data.content);
-});
-
-eventSource.addEventListener('transfer', (e) => {
-  const data = JSON.parse(e.data);
-  showTransfer(data.message, data.ticket_id);
-  eventSource.close();
-});
-
-eventSource.addEventListener('done', (e) => {
-  const data = JSON.parse(e.data);
-  showStats(data.total_tokens, data.cost, data.latency_ms);
-  eventSource.close();
-});
-
-eventSource.addEventListener('error', (e) => {
-  const data = JSON.parse(e.data);
-  showError(data.message);
-  eventSource.close();
-});
-```
-
----
-
-### GET /api/chat_history/{user_id}
-
-获取指定用户的对话历史记录。
-
-**路径参数**：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `user_id` | string | 用户唯一标识 |
-
-**成功响应**：
-
-```json
-{
-  "history": [
-    {
-      "role": "user",
-      "content": "我的订单怎么还没到？"
-    },
-    {
-      "role": "assistant",
-      "content": "请告诉我你要查询的订单号？"
-    },
-    {
-      "role": "user",
-      "content": "A1001"
-    },
-    {
-      "role": "assistant",
-      "content": "您的订单 A1001 当前状态为：待发货。包含商品：路由器 x1、网线 x2。"
-    }
-  ]
-}
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `history` | array | 消息列表，按时间顺序排列 |
-| `history[].role` | string | 消息发送者：`"user"` 或 `"assistant"` |
-| `history[].content` | string | 消息内容 |
-
-**注意事项**：
-
-- 系统消息（SystemMessage）和工具消息（ToolMessage）已自动过滤
-- 重复消息（相同 ID）已自动去重
-- 未知类型的消息会被跳过并记录警告日志
-- 若无历史记录，返回 `{"history": []}`
-
-**错误响应**：
-
-| 状态码 | 说明 |
-|--------|------|
-| 500 | 读取 Redis 状态失败 |
-| 503 | Agent 尚未初始化 |
-
----
-
-### POST /api/init_chat/{user_id}
-
-初始化用户对话。若用户已有对话历史则返回现有历史；否则创建一组示例对话作为初始上下文。
-
-**路径参数**：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `user_id` | string | 用户唯一标识 |
-
-**成功响应（新对话）**：
-
-```json
-{
-  "history": [
-    {
-      "role": "user",
-      "content": "我的订单怎么还没到？"
-    },
-    {
-      "role": "assistant",
-      "content": "请告诉我你要查询的订单号？"
-    }
-  ]
-}
-```
-
-**成功响应（已有历史）**：
-
-```json
-{
-  "history": [
-    {
-      "role": "user",
-      "content": "查询订单A1001"
-    },
-    {
-      "role": "assistant",
-      "content": "您的订单 A1001 当前状态为：待发货..."
-    }
-  ]
-}
-```
-
-**注意事项**：
-
-- 此接口为幂等操作：多次调用不会重复初始化
-- 初始化消息会通过 `ainvoke` 写入 `AsyncRedisSaver`，确保后续对话可延续上下文
-
----
-
-### GET /api/feedback/{user_id}
-
-收集用户对本次服务的满意度反馈。
-
-**路径参数**：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `user_id` | string | 用户唯一标识 |
-
-**查询参数**：
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `score` | integer | 是 | 满意度评分：`1`（满意）或 `0`（不满意） |
-
-**请求示例**：
-
-```
-GET /api/feedback/user123?score=1
-```
-
-**成功响应**：
-
-```json
-{
-  "status": "received",
-  "user_id": "user123",
-  "score": 1,
-  "message": "感谢您的反馈！"
-}
-```
-
-**注意事项**：
-
-- 反馈数据会记录到 Langfuse Trace，便于后续分析和模型优化
-- 可通过 Langfuse 控制台统计满意率、分析不满意案例
-
----
-
-## 全局错误码
-
-| 状态码 | 说明 | 处理建议 |
-|--------|------|---------|
-| 400 | 请求参数错误 | 检查请求体 JSON 格式和必填字段 |
-| 500 | 服务器内部错误 | 查看服务日志，通常包含详细 traceback |
-| 503 | 服务未就绪 | 等待服务启动完成（Agent 初始化需要连接 Redis/Milvus） |
-
----
-
-## 接口调用时序
-
-```
-   客户端                                      服务端
-
-     |---- POST /api/init_chat/user123 --------->|  (初始化对话)
-     |<--- {history: [...]} --------------------|
-     |                                          |
-     |---- POST /api/chat/user123 -------------->|  (发送消息)
-     |       {"message": "查订单A1001"}         |
-     |                                          |---- Gateway Agent
-     |                                          |       |-- SummarizationMiddleware
-     |                                          |       |-- SubAgentMiddleware -> Manager
-     |                                          |                         |-- Order Agent
-     |                                          |                         |     |-- MCP get_order
-     |                                          |                         |     |-- SQLite 查询
-     |                                          |                         |-- 结果整合
-     |<--- {"response": "...", "role": "..."] --|
-     |                                          |
-     |---- GET /api/chat_history/user123 ------->|  (获取历史)
-     |<--- {history: [...]} --------------------|
-     |                                          |
-     |---- GET /api/feedback/user123?score=1 --->|  (提交反馈)
-     |<--- {"status": "received"} --------------|
-```
+`idempotency_key` 长度 16–128，只允许字母、数字、下划线和连字符。业务冲突或重复确认返回 `409`；认证或归属校验失败返回 `401`/`403`；未找到资源返回 `404`。
+
+## 7. 错误与安全约定
+
+| 状态码 | 含义 |
+|---:|---|
+| 400 | 请求格式、消息内容或业务前置条件错误 |
+| 401 | 缺少、过期或无效令牌 |
+| 403 | 角色、租户、主体或资源归属不匹配 |
+| 404 | 当前租户下不存在资源 |
+| 409 | 幂等键冲突、重复确认或状态冲突 |
+| 422 | 字段校验失败，例如评分范围或幂等键格式 |
+| 500 | 未预期服务异常；不向客户端暴露 Traceback |
+| 503 | Agent 或关键依赖尚未就绪 |
+
+生产环境应在 API Gateway 完成 TLS、限流、JWT 签发和基础防护；应用层继续做主体一致性、租户隔离、工具授权和审计，不以客户端传入的身份或工具参数作为授权依据。

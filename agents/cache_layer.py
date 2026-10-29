@@ -54,6 +54,16 @@ NON_CACHEABLE_REPLY_KEYWORDS = [
 _cache_instance = None  # 全局缓存单例
 
 
+def _record_cache_lookup(result: str) -> None:
+    """把缓存命中情况计入 Prometheus；指标模块不可用时静默跳过，不影响主链路。"""
+    try:
+        from service.observability import CACHE_LOOKUPS  # 延迟导入，避免 agents 反向依赖服务层
+
+        CACHE_LOOKUPS.labels(result).inc()
+    except Exception:
+        pass
+
+
 class SemanticCache:
     """
     基于 Redis 的向量语义缓存。
@@ -191,6 +201,7 @@ class SemanticCache:
         """
         if self.redis is None or scope != "public" or self._classify_query(query) == "order":
             self.misses += 1  # 计为未命中
+            _record_cache_lookup("miss")
             return None
 
         try:
@@ -222,14 +233,17 @@ class SemanticCache:
 
             if best_reply:  # 命中缓存
                 self.hits += 1  # 命中计数
+                _record_cache_lookup("hit")
                 logging.info("[Cache] 命中 score=%.3f query='%s...'", best_score, query[:30])
                 return best_reply
 
             self.misses += 1  # 未命中计数
+            _record_cache_lookup("miss")
             return None
         except Exception as exc:  # 查询异常
             self.lookup_errors += 1  # 错误计数
             self.misses += 1  # 也算未命中
+            _record_cache_lookup("error")
             logging.warning("[Cache] 查询失败: %s", exc)
             return None  # 返回 None，不影响主流程
 

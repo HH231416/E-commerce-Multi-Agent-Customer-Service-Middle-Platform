@@ -12,6 +12,14 @@ htmlcov/
 venv/
 env/
 
+# 前端依赖与构建产物
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# 本地依赖数据卷（Milvus/etcd/minio）
+/volumes/
+
 # 环境变量、凭据与证书
 .env
 .env.*

@@ -37,7 +37,15 @@ from service.refund_command import RefundCommandService
 from service.ticket_store import TicketStore
 from service.database import close_database, ensure_database_ready
 from service.observability import configure_observability
-from service.security import Principal, get_current_principal, require_roles
+from service.security import (
+    Principal,
+    clear_session_cookie,
+    decode_claims,
+    get_current_principal,
+    principal_from_claims,
+    require_roles,
+    set_session_cookie,
+)
 from service.settings import settings
 
 # 全局变量，保存启动后的网关 agent 实例
@@ -96,6 +104,11 @@ configure_observability(app)
 # 挂载 html 静态目录，提供前端演示页面访问入口
 html_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "../html"))
 app.mount("/html", StaticFiles(directory=html_directory), name="html")
+
+# 挂载工作台前端构建产物（Vue + Vite）；未构建时跳过，不影响 API 服务启动
+frontend_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/dist"))
+if os.path.isdir(frontend_directory):
+    app.mount("/app", StaticFiles(directory=frontend_directory, html=True), name="frontend")
 
 
 def _ensure_gateway_ready():
@@ -494,6 +507,45 @@ class RefundConfirmRequest(BaseModel):
 async def root():
     """根路由，返回服务信息和文档入口"""
     return JSONResponse(content={"message": "电商多智能体智能客服平台 API", "docs": "/docs"})
+
+
+@app.post("/api/auth/session")
+async def create_session(request: Request):
+    """用 Bearer 令牌换取 HttpOnly 会话 Cookie。
+
+    浏览器端只在登录时接触一次令牌，之后凭 Cookie 访问，
+    令牌不再落到 localStorage / sessionStorage，降低 XSS 窃取风险。
+    """
+    scheme, _, raw_token = request.headers.get("authorization", "").partition(" ")
+    token = raw_token.strip()
+    if scheme.lower() != "bearer" or not token:
+        raise HTTPException(status_code=401, detail="需要 Bearer 访问令牌来换取会话")
+
+    # 校验失败会抛出 401/503，不会下发 Cookie
+    claims = decode_claims(token)
+    principal = principal_from_claims(claims)
+
+    expires_at = int(claims.get("exp", 0))
+    max_age = max(60, expires_at - int(time.time()))
+
+    response = JSONResponse(
+        content={
+            "user_id": principal.subject,
+            "tenant_id": principal.tenant_id,
+            "roles": sorted(principal.roles),
+            "expires_in": max_age,
+        }
+    )
+    set_session_cookie(response, token, max_age)
+    return response
+
+
+@app.delete("/api/auth/session")
+async def delete_session():
+    """清除会话 Cookie。缺少会话时同样返回成功，保证登出幂等。"""
+    response = JSONResponse(content={"status": "ok"})
+    clear_session_cookie(response)
+    return response
 
 
 @app.get("/api/health")

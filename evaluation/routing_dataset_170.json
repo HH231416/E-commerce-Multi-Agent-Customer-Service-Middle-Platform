@@ -1,0 +1,1517 @@
+[
+  {
+    "id": "R001",
+    "category": "order",
+    "question": "查一下订单A1001的状态",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R002",
+    "category": "order",
+    "question": "帮我查一下订单A1015的支付状态",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R003",
+    "category": "order",
+    "question": "订单A1002现在什么情况",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R004",
+    "category": "order",
+    "question": "订单A1016的收货地址是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R005",
+    "category": "order",
+    "question": "订单还没发货能取消吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R006",
+    "category": "order",
+    "question": "我想取消订单A1001",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R007",
+    "category": "order",
+    "question": "这个订单可以取消吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R008",
+    "category": "order",
+    "question": "订单A1017的退款申请提交了吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R009",
+    "category": "order",
+    "question": "我的订单符合退款条件吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R010",
+    "category": "order",
+    "question": "订单金额是多少",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R011",
+    "category": "order",
+    "question": "我买了什么来着，帮我看看订单",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R012",
+    "category": "order",
+    "question": "订单A1005的详情",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R013",
+    "category": "order",
+    "question": "为什么我的订单显示待付款",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R014",
+    "category": "order",
+    "question": "订单A1015支付成功了吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R015",
+    "category": "order",
+    "question": "帮我查下最近一笔订单",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R016",
+    "category": "order",
+    "question": "订单A1006还能改地址吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R017",
+    "category": "order",
+    "question": "订单A1007什么时候发货",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R018",
+    "category": "order",
+    "question": "我的订单被取消了，为什么",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R019",
+    "category": "order",
+    "question": "订单A1008的收货人是谁",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R020",
+    "category": "order",
+    "question": "订单A1009里有几个商品",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R021",
+    "category": "order",
+    "question": "查下订单号A1010",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R022",
+    "category": "order",
+    "question": "我上周买的东西订单还在吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R023",
+    "category": "order",
+    "question": "订单状态一直是待发货",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R024",
+    "category": "order",
+    "question": "帮我看下这个订单还能不能退",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R025",
+    "category": "order",
+    "question": "订单A1011申请退款了吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R026",
+    "category": "order",
+    "question": "订单A1012是什么时候下的单",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R027",
+    "category": "order",
+    "question": "帮我列一下我的订单",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R028",
+    "category": "order",
+    "question": "订单A1013能不能改收货信息",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R029",
+    "category": "order",
+    "question": "订单显示已完成但我没收到",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R030",
+    "category": "order",
+    "question": "订单A1014的支付方式是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "order"
+    ]
+  },
+  {
+    "id": "R031",
+    "category": "product",
+    "question": "这款路由器的参数是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R032",
+    "category": "product",
+    "question": "商品A201的价格是多少",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R033",
+    "category": "product",
+    "question": "这个还有库存吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R034",
+    "category": "product",
+    "question": "有什么推荐的降噪耳机",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R035",
+    "category": "product",
+    "question": "帮我找一款200以内的充电宝",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R036",
+    "category": "product",
+    "question": "这个尺码怎么选",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R037",
+    "category": "product",
+    "question": "这件衣服的材质是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R038",
+    "category": "product",
+    "question": "这两款有什么区别",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R039",
+    "category": "product",
+    "question": "有没有适合跑步的鞋",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R040",
+    "category": "product",
+    "question": "商品A202的重量是多少",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R041",
+    "category": "product",
+    "question": "这个颜色有货吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R042",
+    "category": "product",
+    "question": "帮我搜一下机械键盘",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R043",
+    "category": "product",
+    "question": "商品A203的包装清单是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R044",
+    "category": "product",
+    "question": "这款手机支持5G吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R045",
+    "category": "product",
+    "question": "商品A204适合什么人群",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R046",
+    "category": "product",
+    "question": "这个商品的评价怎么样",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R047",
+    "category": "product",
+    "question": "有没有便宜一点的替代款",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R048",
+    "category": "product",
+    "question": "商品A205什么时候补货",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R049",
+    "category": "product",
+    "question": "这个型号的尺寸是多少",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R050",
+    "category": "product",
+    "question": "帮我对比一下A206和A207",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R051",
+    "category": "product",
+    "question": "商品A208是正品吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R052",
+    "category": "product",
+    "question": "这款支持无线充电吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R053",
+    "category": "product",
+    "question": "商品A209的产地是哪里",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R054",
+    "category": "product",
+    "question": "我想买台洗衣机，有推荐吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R055",
+    "category": "product",
+    "question": "商品A210现在卖多少钱",
+    "user_id": "1",
+    "expected_domains": [
+      "product"
+    ]
+  },
+  {
+    "id": "R056",
+    "category": "logistics",
+    "question": "我的快递到哪了",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R057",
+    "category": "logistics",
+    "question": "订单A3001的物流轨迹",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R058",
+    "category": "logistics",
+    "question": "为什么物流三天没更新",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R059",
+    "category": "logistics",
+    "question": "预计什么时候能送到",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R060",
+    "category": "logistics",
+    "question": "快递显示签收但我没收到",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R061",
+    "category": "logistics",
+    "question": "能查下快递单号吗",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R062",
+    "category": "logistics",
+    "question": "我的包裹怎么还没到",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R063",
+    "category": "logistics",
+    "question": "物流显示异常怎么办",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R064",
+    "category": "logistics",
+    "question": "用的哪家快递",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R065",
+    "category": "logistics",
+    "question": "能不能催一下快递",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R066",
+    "category": "logistics",
+    "question": "订单A3002什么时候送达",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R067",
+    "category": "logistics",
+    "question": "我的件被退回了",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R068",
+    "category": "logistics",
+    "question": "物流信息一直不更新",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R069",
+    "category": "logistics",
+    "question": "包裹显示派送中，今天能到吗",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R070",
+    "category": "logistics",
+    "question": "快递丢了怎么处理",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R071",
+    "category": "logistics",
+    "question": "快递已经到了，我想改收货地址",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R072",
+    "category": "logistics",
+    "question": "订单A3003的配送进度",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R073",
+    "category": "logistics",
+    "question": "为什么我的包裹去了别的城市",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R074",
+    "category": "logistics",
+    "question": "快递员电话是多少",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R075",
+    "category": "logistics",
+    "question": "能不能指定送达时间",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R076",
+    "category": "logistics",
+    "question": "我的两个包裹能一起送吗",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R077",
+    "category": "logistics",
+    "question": "订单A3004显示已发货但查不到物流",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R078",
+    "category": "logistics",
+    "question": "物流停滞五天了",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R079",
+    "category": "logistics",
+    "question": "送到驿站了要去哪取",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R080",
+    "category": "logistics",
+    "question": "大促期间物流会延迟吗",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics"
+    ]
+  },
+  {
+    "id": "R081",
+    "category": "coupon",
+    "question": "我有哪些优惠券",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R082",
+    "category": "coupon",
+    "question": "为什么我的券用不了",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R083",
+    "category": "coupon",
+    "question": "满300减50怎么用",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R084",
+    "category": "coupon",
+    "question": "两张券能叠加吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R085",
+    "category": "coupon",
+    "question": "我的券什么时候过期",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R086",
+    "category": "coupon",
+    "question": "有没有新人券",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R087",
+    "category": "coupon",
+    "question": "现在有什么活动",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R088",
+    "category": "coupon",
+    "question": "订单A4001能用券吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R089",
+    "category": "coupon",
+    "question": "帮我算一下最优优惠券",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R090",
+    "category": "coupon",
+    "question": "券和满减能一起用吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R091",
+    "category": "coupon",
+    "question": "为什么下单没自动抵扣",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R092",
+    "category": "coupon",
+    "question": "我的券怎么少了一张",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R093",
+    "category": "coupon",
+    "question": "领券在哪领",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R094",
+    "category": "coupon",
+    "question": "会员日有什么优惠",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R095",
+    "category": "coupon",
+    "question": "这个商品参加满减吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R096",
+    "category": "coupon",
+    "question": "优惠券可以退款吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R097",
+    "category": "coupon",
+    "question": "促销价和券能叠加吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R098",
+    "category": "coupon",
+    "question": "订单取消后券会退回吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R099",
+    "category": "coupon",
+    "question": "有品类券吗",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R100",
+    "category": "coupon",
+    "question": "满减门槛是按原价算还是折后价",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon"
+    ]
+  },
+  {
+    "id": "R101",
+    "category": "policy",
+    "question": "七天无理由退货怎么规定的",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R102",
+    "category": "policy",
+    "question": "退货流程是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R103",
+    "category": "policy",
+    "question": "换货需要什么条件",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R104",
+    "category": "policy",
+    "question": "保修政策是怎样的",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R105",
+    "category": "policy",
+    "question": "怎么开发票",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R106",
+    "category": "policy",
+    "question": "价保怎么申请",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R107",
+    "category": "policy",
+    "question": "跨境商品关税谁承担",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R108",
+    "category": "policy",
+    "question": "会员积分怎么算",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R109",
+    "category": "policy",
+    "question": "拆封后还能退吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R110",
+    "category": "policy",
+    "question": "定制商品支持退货吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R111",
+    "category": "policy",
+    "question": "退款多久到账",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R112",
+    "category": "policy",
+    "question": "退货运费谁承担",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R113",
+    "category": "policy",
+    "question": "售后时效是多久",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R114",
+    "category": "policy",
+    "question": "电子产品保修几年",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R115",
+    "category": "policy",
+    "question": "发票可以开专用发票吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R116",
+    "category": "policy",
+    "question": "价保时效多久",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R117",
+    "category": "policy",
+    "question": "积分可以兑换什么",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R118",
+    "category": "policy",
+    "question": "生鲜商品能退吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R119",
+    "category": "policy",
+    "question": "退货运费险怎么用",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R120",
+    "category": "policy",
+    "question": "会员等级怎么升级",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R121",
+    "category": "policy",
+    "question": "大促商品支持价保吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R122",
+    "category": "policy",
+    "question": "退货需要保留包装吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R123",
+    "category": "policy",
+    "question": "退款能退到原支付方式吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R124",
+    "category": "policy",
+    "question": "保修需要发票吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R125",
+    "category": "policy",
+    "question": "跨境商品能退吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy"
+    ]
+  },
+  {
+    "id": "R126",
+    "category": "chat",
+    "question": "你好",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R127",
+    "category": "chat",
+    "question": "在吗",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R128",
+    "category": "chat",
+    "question": "谢谢",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R129",
+    "category": "chat",
+    "question": "你是谁",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R130",
+    "category": "chat",
+    "question": "你能做什么",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R131",
+    "category": "chat",
+    "question": "早上好",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R132",
+    "category": "chat",
+    "question": "再见",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R133",
+    "category": "chat",
+    "question": "辛苦了",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R134",
+    "category": "chat",
+    "question": "我想咨询一下",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R135",
+    "category": "chat",
+    "question": "你叫什么名字",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R136",
+    "category": "chat",
+    "question": "好的我知道了",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R137",
+    "category": "chat",
+    "question": "嗯嗯",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R138",
+    "category": "chat",
+    "question": "麻烦你了",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R139",
+    "category": "chat",
+    "question": "太感谢了",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R140",
+    "category": "chat",
+    "question": "你是机器人吗",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R141",
+    "category": "chat",
+    "question": "有人吗",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R142",
+    "category": "chat",
+    "question": "你好呀",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R143",
+    "category": "chat",
+    "question": "拜拜",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R144",
+    "category": "chat",
+    "question": "你多大了",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R145",
+    "category": "chat",
+    "question": "我想转人工",
+    "user_id": "1",
+    "expected_domains": []
+  },
+  {
+    "id": "R146",
+    "category": "multi_intent",
+    "question": "订单A1001到哪了，顺便看看有什么券",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R147",
+    "category": "multi_intent",
+    "question": "我的订单A1002能退吗，退货运费谁出",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "policy"
+    ]
+  },
+  {
+    "id": "R148",
+    "category": "multi_intent",
+    "question": "这款耳机多少钱，有优惠券吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R149",
+    "category": "multi_intent",
+    "question": "订单A1003还没发货，能取消吗，退款多久到账",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "policy"
+    ]
+  },
+  {
+    "id": "R150",
+    "category": "multi_intent",
+    "question": "帮我查下订单A1004的物流，还有保修多久",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics",
+      "policy"
+    ]
+  },
+  {
+    "id": "R151",
+    "category": "multi_intent",
+    "question": "推荐个充电宝，再看看最近的活动",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R152",
+    "category": "multi_intent",
+    "question": "订单A1005能取消吗，券会退回来吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R153",
+    "category": "multi_intent",
+    "question": "我的快递到哪了，顺便问下发票怎么开",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics",
+      "policy"
+    ]
+  },
+  {
+    "id": "R154",
+    "category": "multi_intent",
+    "question": "这个手机有货吗，支持七天无理由吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "policy"
+    ]
+  },
+  {
+    "id": "R155",
+    "category": "multi_intent",
+    "question": "订单A1006的金额是多少，能用满减吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R156",
+    "category": "multi_intent",
+    "question": "我要退订单A1008，流程是什么",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "policy"
+    ]
+  },
+  {
+    "id": "R157",
+    "category": "multi_intent",
+    "question": "有什么降噪耳机推荐，能用券吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R158",
+    "category": "multi_intent",
+    "question": "订单A1009物流停滞了，能申请退款吗",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics",
+      "order"
+    ]
+  },
+  {
+    "id": "R159",
+    "category": "multi_intent",
+    "question": "会员有什么优惠，积分怎么用",
+    "user_id": "1",
+    "expected_domains": [
+      "coupon",
+      "policy"
+    ]
+  },
+  {
+    "id": "R160",
+    "category": "multi_intent",
+    "question": "商品A201的库存还有吗，最近有活动吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R161",
+    "category": "multi_intent",
+    "question": "帮我查订单A1011，顺便看看有没有可用的券",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R162",
+    "category": "multi_intent",
+    "question": "退款申请了，钱什么时候到，物流要退回吗",
+    "user_id": "1",
+    "expected_domains": [
+      "policy",
+      "logistics"
+    ]
+  },
+  {
+    "id": "R163",
+    "category": "multi_intent",
+    "question": "这款鞋有我的码吗，能无理由退吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "policy"
+    ]
+  },
+  {
+    "id": "R164",
+    "category": "multi_intent",
+    "question": "订单A1012取消后，优惠券会退吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R165",
+    "category": "multi_intent",
+    "question": "我的包裹丢了，怎么理赔，流程是啥",
+    "user_id": "1",
+    "expected_domains": [
+      "logistics",
+      "policy"
+    ]
+  },
+  {
+    "id": "R166",
+    "category": "multi_intent",
+    "question": "有新品推荐吗，现在有券吗",
+    "user_id": "1",
+    "expected_domains": [
+      "product",
+      "coupon"
+    ]
+  },
+  {
+    "id": "R167",
+    "category": "multi_intent",
+    "question": "订单A1014支付成功了吗，什么时候发货",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "logistics"
+    ]
+  },
+  {
+    "id": "R168",
+    "category": "multi_intent",
+    "question": "我的订单到哪一步了，物流更新了吗",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "logistics"
+    ]
+  },
+  {
+    "id": "R169",
+    "category": "multi_intent",
+    "question": "帮我看看A1003有没有发货，什么时候能到",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "logistics"
+    ]
+  },
+  {
+    "id": "R170",
+    "category": "multi_intent",
+    "question": "订单A1004能退吗，退款要多久",
+    "user_id": "1",
+    "expected_domains": [
+      "order",
+      "policy"
+    ]
+  }
+]

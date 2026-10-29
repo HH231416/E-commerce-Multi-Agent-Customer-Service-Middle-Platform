@@ -12,7 +12,7 @@ uvicorn[standard]>=0.29.0
 redis[hiredis]
 faiss-cpu
 pymilvus>=2.4,<3.0
-mcp
+mcp>=1.9,<2.0
 python-dotenv
 pandas
 openpyxl

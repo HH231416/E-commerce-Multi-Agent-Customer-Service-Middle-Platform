@@ -24,6 +24,50 @@ class StreamEventType:
     DONE = "done"              # 任务完成（包含 Token 用量和延迟）
 
 
+# 这些节点产出的是内部结构化数据（意图计划等），不能当作回复正文推给用户
+INTERNAL_NODES = frozenset({"plan"})
+
+# 子智能体由工具节点调用，其事件落在 tools:<uuid> 命名空间下，属于中间过程
+SUBTASK_NAMESPACE_PREFIX = "tools:"
+
+
+def _record_llm_metrics(total_tokens: int, cost: float) -> None:
+    """把 Token 与成本计入 Prometheus；指标模块不可用时静默跳过。"""
+    try:
+        from service.observability import LLM_COST, LLM_TOKENS
+
+        if total_tokens:
+            LLM_TOKENS.inc(total_tokens)
+        if cost:
+            LLM_COST.inc(cost)
+    except Exception:
+        pass
+
+
+def _chunk_total_tokens(chunk) -> int | None:
+    """从单个流式 chunk 读取该次调用的累计 Token 用量。
+
+    不同版本/供应商把用量放在不同位置：
+    - usage_metadata：LangChain 标准字段（需开启 stream_usage）
+    - response_metadata.token_usage：OpenAI 兼容接口的原始字段
+    流式响应通常只在末尾 chunk 带上用量，取不到时返回 None。
+    """
+    usage_metadata = getattr(chunk, "usage_metadata", None)
+    if isinstance(usage_metadata, dict):
+        value = usage_metadata.get("total_tokens")
+        if isinstance(value, int) and value:
+            return value
+
+    response_metadata = getattr(chunk, "response_metadata", None)
+    if isinstance(response_metadata, dict):
+        token_usage = response_metadata.get("token_usage") or {}
+        if isinstance(token_usage, dict):
+            value = token_usage.get("total_tokens")
+            if isinstance(value, int) and value:
+                return value
+    return None
+
+
 def format_sse(event_type: str, data: dict) -> str:
     """
     将事件格式化为 SSE 协议字符串。
@@ -51,6 +95,7 @@ async def stream_agent_response(
     """
     start_time = time.time()  # 记录开始时间（用于计算延迟）
     total_tokens = 0  # 累计 Token 用量
+    usage_by_run = {}  # 按 run_id 去重累计各次模型调用用量
     current_thinking_step = None  # 当前思考步骤描述
 
     has_content = False  # 标记是否产出了任何内容（用于回退判断）
@@ -72,15 +117,31 @@ async def stream_agent_response(
 
             # Token 级别流式输出（LLM 每生成一个 token 触发一次）
             if event_name == "on_chat_model_stream":
+                # 只要模型产出了内容，就不再回退到 ainvoke，避免整条链路重复执行
+                has_content = True
+
                 chunk = event_data.get("chunk", {})  # 获取 chunk 对象
+
+                # Token 用量按 run_id 去重累计：规划、子智能体、网关各自独立计费，
+                # 只算其中一次会低估成本。
+                run_id = event.get("run_id") or ""
+                usage = _chunk_total_tokens(chunk)
+                if usage is not None:
+                    usage_by_run[run_id] = max(usage_by_run.get(run_id, 0), usage)
+                total_tokens = sum(usage_by_run.values())
+
+                metadata = event.get("metadata") or {}
+                node = metadata.get("langgraph_node")
+                namespace = metadata.get("checkpoint_ns") or ""
+                # 内部规划节点与子智能体（tools 命名空间）产出的是中间结果，
+                # 直接推给用户会出现 JSON 计划或重复答复
+                if node in INTERNAL_NODES or namespace.startswith(SUBTASK_NAMESPACE_PREFIX):
+                    continue
+
                 if hasattr(chunk, "content") and chunk.content:  # 有文本内容
-                    has_content = True  # 标记已产出内容
                     yield format_sse(StreamEventType.TOKEN, {
                         "content": chunk.content  # 推送单个 token
                     })
-                if hasattr(chunk, "response_metadata"):  # 尝试提取 Token 用量
-                    usage = chunk.response_metadata.get("token_usage", {})
-                    total_tokens = usage.get("total_tokens", total_tokens)
 
             # 工具调用开始（Agent 决定调用某个 MCP 工具）
             elif event_name == "on_tool_start":
@@ -105,6 +166,7 @@ async def stream_agent_response(
                     "search_products": "正在搜索商品...",
                     "get_policy": "正在检索相关政策...",
                     "query_knowledge_base": "正在从知识库检索信息...",
+                    "task": "正在分派任务给领域智能体...",
                 }
                 step_msg = thinking_map.get(tool_name, f"正在调用 {tool_name}...")  # 未知工具用通用提示
                 current_thinking_step = step_msg  # 记录当前步骤
@@ -144,6 +206,8 @@ async def stream_agent_response(
         # 发送完成事件
         elapsed_ms = int((time.time() - start_time) * 1000)  # 计算总延迟
         estimated_cost = round(total_tokens * 0.000004, 4)  # 估算费用（按 ¥0.004/1K tokens）
+
+        _record_llm_metrics(total_tokens, estimated_cost)
 
         yield format_sse(StreamEventType.DONE, {
             "total_tokens": total_tokens,  # Token 用量
