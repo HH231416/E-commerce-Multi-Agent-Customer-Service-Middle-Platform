@@ -25,7 +25,7 @@ fi
 # 尝试启动 Redis（可选，失败不阻塞）
 echo "[1/3] 启动 Redis..."
 if command -v docker &> /dev/null; then
-    docker compose -f docker-compose.redis.yml up -d 2>/dev/null && echo "  Redis 已启动 (Docker)" || echo "  跳过: Docker 不可用"
+    docker compose up -d redis 2>/dev/null && echo "  Redis 已启动 (Docker)" || echo "  跳过: Docker 不可用"
 else
     echo "  跳过: Docker 未安装，使用 MemorySaver 内存模式"
 fi

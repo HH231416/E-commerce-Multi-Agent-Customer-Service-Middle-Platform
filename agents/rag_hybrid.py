@@ -105,7 +105,7 @@ class HybridRetriever:
 
     def retrieve(self, query: str, top_k: int = 5, final_k: int = 3) -> List[Document]:
         """
-        执行混合检索：BM25+FAISS 并行召回 → RRF 融合去重 → Reranker 重排序 → 返回 top final_k。
+        执行混合检索：BM25+FAISS 并行召回 → RRF 融合去重 → 二次去重 → Reranker 重排序 → 返回 top final_k。
 
         输入：
         - query: 用户查询字符串
@@ -136,6 +136,10 @@ class HybridRetriever:
 
         if not merged:  # 两路都没召回结果
             return []
+
+        # Step 2.5: 按 document_id + 片段内容前缀二次去重（同源同文片段只保留一次）。
+        # RRF 已按 document_id 去重，这里兜底去掉内容完全相同却被重复召回的片段
+        merged = _deduplicate_documents(merged)
 
         # Step 3: Reranker 重排序（用 CrossEncoder 对 query-doc 对打分）
         reranker = get_reranker() if self.use_reranker else None  # 获取共享 Reranker（可能为 None）

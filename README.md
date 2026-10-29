@@ -1,4 +1,4 @@
-# 🛒 电商多智能体智能客服平台
+# 🛒 电商多智能体客服中台
 
 # E-Commerce Multi-Agent Intelligent Customer Service Platform
 
